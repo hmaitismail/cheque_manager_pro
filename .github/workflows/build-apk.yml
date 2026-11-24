@@ -31,6 +31,7 @@ jobs:
           mkdir -p logs
           flutter --version 2>&1 | tee logs/01_version.txt
           flutter create --org ma.chequemanager --project-name cheque_manager_pro --platforms android . 2>&1 | tee logs/02_create.txt
+          rm -f test/widget_test.dart
           python3 outils/configurer_plateformes.py 2>&1 | tee logs/03_config.txt
           flutter pub get 2>&1 | tee logs/04_pub_get.txt
 
