@@ -96,6 +96,21 @@ def android():
     else:
         print(KO + "Fichier Gradle de l'application introuvable.")
         return False
+
+    # Désactive l'analyse « lint » des plugins en release : elle plante sur
+    # certaines versions des outils Android sans rien apporter à l'APK.
+    racine_kts = RACINE / "android/build.gradle.kts"
+    racine_groovy = RACINE / "android/build.gradle"
+    bloc_kts = ('\nsubprojects {\n    tasks.matching { it.name.startsWith("lintVital") }'
+                '.configureEach { enabled = false }\n}\n')
+    bloc_groovy = ("\nsubprojects {\n    tasks.matching { it.name.startsWith('lintVital') }"
+                   ".configureEach { enabled = false }\n}\n")
+    for f, bloc in ((racine_kts, bloc_kts), (racine_groovy, bloc_groovy)):
+        if f.exists():
+            g = lire(f)
+            if "lintVital" not in g:
+                ecrire(f, g + bloc)
+            print(OK + f"{f.name} (racine) : analyse lint des plugins désactivée en release")
     return True
 
 
