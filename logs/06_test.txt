@@ -1,0 +1,40 @@
+
+::group::✅ Passing tests
+✅ Montants saisie convertie en centimes sans erreur d'arrondi
+✅ Montants affichage MAD
+✅ Chéquiers plage et numéros
+✅ Chéquiers refuse doublon de numéro et chevauchement dans le même compte
+✅ Chéquiers accepte la même plage dans un autre compte
+✅ Chéquiers interdit de réduire la plage sous des chèques déjà émis
+✅ Chéquiers refuse une plage inversée
+✅ Chèques chèque valide
+✅ Chèques montant nul ou négatif refusé
+✅ Chèques numéro hors du chéquier refusé
+✅ Chèques doublon dans le même compte refusé, y compris en corbeille
+✅ Chèques modification du même chèque : pas de faux doublon
+✅ Chèques chéquier d'une autre banque refusé
+✅ Chèques présentation avant édition refusée
+✅ Chèques chèque similaire signalé (avertissement)
+✅ Statuts payé uniquement après présentation (présenté ≠ débité)
+✅ Statuts payé et détruit sont définitifs
+✅ Statuts seul un chèque en attente peut être supprimé
+✅ Statuts impayé : motif obligatoire
+✅ Statuts représentation : nouvelle date obligatoire
+✅ Tableau de bord aucun double comptage, corbeille exclue
+✅ Tableau de bord agrégats par statut
+✅ Tableau de bord priorités du jour
+✅ Tableau de bord évolution mensuelle
+✅ Recherche par bénéficiaire, numéro, montant et ville
+✅ Recherche filtre par statut et tri par montant
+✅ Rappels (exemple du cahier des charges) veille, jour J et alerte de retard programmés
+✅ Rappels (exemple du cahier des charges) les rappels passés ne sont pas reprogrammés
+✅ Rappels (exemple du cahier des charges) chèque en retard : alerte groupée
+✅ Rappels (exemple du cahier des charges) rappels désactivés pour un chèque ou globalement
+✅ Rappels (exemple du cahier des charges) chèques payés ignorés, impayés suivis
+✅ Rappels (exemple du cahier des charges) identifiants stables et limite iOS de 60 notifications
+✅ Langues français par défaut, anglais et arabe traduits avec valeurs
+✅ Licence clé du vendeur acceptée, liée à l'appareil
+✅ Licence clé modifiée refusée
+::endgroup::
+
+🎉 35 tests passed.

@@ -1,0 +1,13 @@
+
+::group::✅ Passing tests
+✅ accueil fr
+✅ accueil ar
+✅ accueil en
+✅ accueil sombre
+✅ accueil défilé
+✅ premier lancement
+✅ liste des chèques
+✅ licence
+::endgroup::
+
+🎉 8 tests passed.

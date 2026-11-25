@@ -1,0 +1,5 @@
+Signature définitive activée
+V2 Signer: certificate DN: CN=Cheque Manager Pro, O=Cheque Manager Pro, C=MA
+V2 Signer: certificate SHA-256 digest: 44ef1cc0673da30d301cb23d0d1f80bf0bace61e635158bcc1ffd35d93bc6265
+V2 Signer: certificate SHA-1 digest: 9d4a535edcd44a0fd8b3fe1b34199dbd6a3066f1
+V2 Signer: certificate MD5 digest: 26de61c6bc60d55c9018e66714762d40

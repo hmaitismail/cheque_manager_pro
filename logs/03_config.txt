@@ -1,0 +1,11 @@
+Configuration de Cheque Manager Pro
+
+Android
+  [OK] AndroidManifest.xml : permissions, récepteurs de notifications, nom de l'application
+  [OK] MainActivity.kt : FlutterFragmentActivity (biométrie)
+  [OK] build.gradle.kts : compileSdk 37, minSdk 28 (Android 9+), desugaring
+  [OK] build.gradle.kts (racine) : analyse lint des plugins désactivée en release
+iOS
+  [!!] ios/ introuvable (normal sous Windows si vous n'avez généré qu'Android).
+
+Terminé.
