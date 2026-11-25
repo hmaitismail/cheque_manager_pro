@@ -38,13 +38,20 @@ class DashboardScreen extends StatelessWidget {
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
-            _EnTete(s: s, onOnglet: onOnglet),
-            Transform.translate(
-              offset: const Offset(0, -34),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: _ActionsRapides(onOnglet: onOnglet),
-              ),
+            // L'en-tête et les actions rapides se chevauchent (sans espace perdu).
+            Stack(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 52),
+                  child: _EnTete(s: s, onOnglet: onOnglet),
+                ),
+                Positioned(
+                  left: 16,
+                  right: 16,
+                  bottom: 0,
+                  child: _ActionsRapides(onOnglet: onOnglet),
+                ),
+              ],
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 28),
@@ -104,7 +111,7 @@ class _EnTete extends StatelessWidget {
     final salut = heure < 18 ? tr('Bonjour') : tr('Bonsoir');
 
     return Container(
-      padding: EdgeInsets.fromLTRB(20, haut + 14, 12, 58),
+      padding: EdgeInsets.fromLTRB(20, haut + 14, 12, 66),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -342,8 +349,8 @@ class _ActionsRapides extends StatelessWidget {
     );
 
     return Material(
-      elevation: 6,
-      shadowColor: Colors.black26,
+      elevation: 3,
+      shadowColor: Colors.black.withValues(alpha: 0.18),
       color: Theme.of(context).colorScheme.surface,
       borderRadius: BorderRadius.circular(18),
       child: Padding(

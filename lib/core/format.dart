@@ -124,7 +124,8 @@ class Fmt {
     final s = entier.toString();
     final buf = StringBuffer();
     for (var i = 0; i < s.length; i++) {
-      if (i > 0 && (s.length - i) % 3 == 0) buf.write(' ');
+      // Espace insécable : garde les chiffres groupés, y compris en arabe (droite à gauche).
+      if (i > 0 && (s.length - i) % 3 == 0) buf.write('\u00a0');
       buf.write(s[i]);
     }
     return '${negatif ? '-' : ''}$buf,$dec${devise ? ' MAD' : ''}';
@@ -134,10 +135,10 @@ class Fmt {
   static String madCompact(int centimes) {
     final v = centimes / 100.0;
     if (v.abs() >= 1000000) {
-      return '${(v / 1000000).toStringAsFixed(1).replaceAll('.', ',')} M';
+      return '${(v / 1000000).toStringAsFixed(1).replaceAll('.', ',')}\u00a0M';
     }
     if (v.abs() >= 1000) {
-      return '${(v / 1000).toStringAsFixed(1).replaceAll('.', ',')} k';
+      return '${(v / 1000).toStringAsFixed(1).replaceAll('.', ',')}\u00a0k';
     }
     return v.toStringAsFixed(0);
   }

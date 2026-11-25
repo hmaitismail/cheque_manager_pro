@@ -62,7 +62,7 @@ class BandeauLicence extends StatelessWidget {
         ]);
         couleur = info.joursRestants <= 7
             ? Colors.orange.shade800
-            : AppColors.bleuNuitClair;
+            : Theme.of(context).colorScheme.primary;
       case EtatLicence.expiree:
         texte = tr('Essai terminé : application en lecture seule');
         couleur = Colors.red.shade700;

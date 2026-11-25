@@ -70,9 +70,9 @@ void main() {
       expect(Fmt.parseMontant(''), isNull);
     });
     test('affichage MAD', () {
-      expect(Fmt.mad(1500000), '15 000,00 MAD');
+      expect(Fmt.mad(1500000), '15\u00a0000,00 MAD');
       expect(Fmt.mad(5), '0,05 MAD');
-      expect(Fmt.mad(123456789, devise: false), '1 234 567,89');
+      expect(Fmt.mad(123456789, devise: false), '1\u00a0234\u00a0567,89');
       expect(Fmt.montantSaisie(1500050), '15000,50');
     });
   });

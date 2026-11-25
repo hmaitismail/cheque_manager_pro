@@ -100,3 +100,17 @@ détruits, situation par banque, situation mensuelle, journal complet) et la pé
   laisse une trace complète dans l'historique.
 * **Plus > Historique** liste toutes les opérations : créations, modifications (avec l'ancienne
   et la nouvelle valeur), changements de statut, pièces jointes, sauvegardes, exports.
+
+## 10. Langue
+
+**Paramètres > Affichage > Langue** : français, العربية (affichage de droite à gauche) ou English.
+Les rapports PDF et les notifications suivent la langue choisie.
+
+## 11. Licence
+
+* 30 jours d'essai gratuit, avec toutes les fonctions.
+* **Paramètres > Licence** affiche l'état de la licence et le **code de l'appareil**.
+  Le bouton « Envoyer » transmet ce code au vendeur, qui vous renvoie une clé d'activation.
+  Collez-la puis touchez **Activer la licence**.
+* Sans licence active, l'application passe en lecture seule : vos chèques restent visibles,
+  la recherche et les sauvegardes restent possibles.

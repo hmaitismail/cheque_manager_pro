@@ -156,8 +156,8 @@ class ChequeTile extends StatelessWidget {
       subtitle: Text(
         tr('N° {0} · {1}\n{2}Présentation {3}', [
           app.numero(cheque),
-          app.nomBanque(cheque.banqueId),
-          retard ? 'EN RETARD · ' : '',
+          app.banque(cheque.banqueId)?.nom ?? '?',
+          retard ? '${tr('En retard').toUpperCase()} · ' : '',
           Fmt.date(cheque.datePresentation),
         ]),
         maxLines: 2,
