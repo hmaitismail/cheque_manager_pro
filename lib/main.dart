@@ -5,9 +5,11 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 
 import 'core/theme.dart';
+import 'l10n/i18n.dart';
 import 'screens/cheque_detail_screen.dart';
 import 'screens/home_shell.dart';
 import 'screens/verrou.dart';
+import 'services/licence.dart';
 import 'services/rappels.dart';
 import 'services/securite.dart';
 import 'state/app_state.dart';
@@ -18,6 +20,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await ServiceSecurite.instance.charger();
   await ServiceRappels.instance.initialiser();
+  await ServiceLicence.instance.charger();
   final state = await AppState.demarrer();
 
   ServiceRappels.instance.surOuverture = (chequeId) {
@@ -48,6 +51,7 @@ class ChequeManagerApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final mode = context.select<AppState, ThemeMode>((s) => s.themeMode);
+    final langue = context.select<AppState, Langue>((s) => s.langue);
     return MaterialApp(
       title: 'Cheque Manager Pro',
       debugShowCheckedModeBanner: false,
@@ -55,8 +59,8 @@ class ChequeManagerApp extends StatelessWidget {
       theme: AppTheme.clair(),
       darkTheme: AppTheme.sombre(),
       themeMode: mode,
-      locale: const Locale('fr', 'FR'),
-      supportedLocales: const [Locale('fr', 'FR')],
+      locale: langue.locale,
+      supportedLocales: [for (final l in Langue.values) l.locale],
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
@@ -65,7 +69,8 @@ class ChequeManagerApp extends StatelessWidget {
       // Le verrou est placé au-dessus du Navigator : il masque aussi les
       // écrans et boîtes de dialogue ouverts.
       builder: (context, child) => VerrouGate(child: child ?? const SizedBox()),
-      home: const HomeShell(),
+      // La clé reconstruit tout l'accueil lors d'un changement de langue.
+      home: HomeShell(key: ValueKey(langue)),
     );
   }
 }

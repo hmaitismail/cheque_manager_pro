@@ -81,6 +81,33 @@ def android():
             g = re.sub(r"compileOptions\s*\{", "compileOptions {\n        isCoreLibraryDesugaringEnabled = true", g, count=1)
         if "desugar_jdk_libs" not in g:
             g += '\ndependencies {\n    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")\n}\n'
+        # Signature définitive : utilisée si android/key.properties existe
+        # (indispensable pour installer les mises à jour sans perdre les données).
+        if "keystoreProperties" not in g:
+            # Les imports en tête, les déclarations après le bloc plugins { }.
+            g = "import java.io.FileInputStream\nimport java.util.Properties\n\n" + g
+            proprietes = (
+                "val keystoreProperties = Properties()\n"
+                'val keystorePropertiesFile = rootProject.file("key.properties")\n'
+                "if (keystorePropertiesFile.exists()) {\n"
+                "    keystoreProperties.load(FileInputStream(keystorePropertiesFile))\n}\n\n"
+            )
+            g = g.replace("\nandroid {", "\n" + proprietes + "android {", 1)
+            signing = (
+                "    signingConfigs {\n"
+                '        create("release") {\n'
+                "            if (keystorePropertiesFile.exists()) {\n"
+                '                keyAlias = keystoreProperties["keyAlias"] as String\n'
+                '                keyPassword = keystoreProperties["keyPassword"] as String\n'
+                '                storeFile = file(keystoreProperties["storeFile"] as String)\n'
+                '                storePassword = keystoreProperties["storePassword"] as String\n'
+                "            }\n        }\n    }\n\n    buildTypes {"
+            )
+            g = g.replace("    buildTypes {", signing, 1)
+            g = g.replace(
+                'signingConfig = signingConfigs.getByName("debug")',
+                'signingConfig = if (keystorePropertiesFile.exists()) signingConfigs.getByName("release") '
+                'else signingConfigs.getByName("debug")', 1)
         ecrire(kts, g)
         print(OK + "build.gradle.kts : compileSdk 37, minSdk 28 (Android 9+), desugaring")
     elif groovy.exists():

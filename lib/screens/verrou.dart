@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../core/theme.dart';
 import '../services/securite.dart';
+import '../l10n/i18n.dart';
 
 /// Protège toute l'application : code PIN / biométrie au démarrage, au retour
 /// en premier plan et après une période d'inactivité.
@@ -151,7 +152,7 @@ class _EcranVerrouState extends State<_EcranVerrou> {
       setState(() {
         _verif = false;
         _pin = '';
-        _erreur = 'Trop de tentatives. Réessayez dans $bloque s.';
+        _erreur = tr('Trop de tentatives. Réessayez dans {0} s.', [bloque]);
       });
       return;
     }
@@ -163,14 +164,14 @@ class _EcranVerrouState extends State<_EcranVerrou> {
       setState(() {
         _verif = false;
         _pin = '';
-        _erreur = 'Code incorrect';
+        _erreur = tr('Code incorrect');
       });
     }
   }
 
   @override
   Widget build(BuildContext context) => _FondSecurite(
-    titre: 'Saisissez votre code',
+    titre: tr('Saisissez votre code'),
     pin: _pin,
     erreur: _erreur,
     chargement: _verif,
@@ -200,7 +201,7 @@ class _CreationPinState extends State<_CreationPin> {
 
   Future<void> _valider() async {
     if (_pin.length < 4) {
-      setState(() => _erreur = 'Le code doit contenir 4 à 6 chiffres');
+      setState(() => _erreur = tr('Le code doit contenir 4 à 6 chiffres'));
       return;
     }
     if (_premier == null) {
@@ -215,7 +216,7 @@ class _CreationPinState extends State<_CreationPin> {
       setState(() {
         _premier = null;
         _pin = '';
-        _erreur = 'Les codes ne correspondent pas, recommencez';
+        _erreur = tr('Les codes ne correspondent pas, recommencez');
       });
       return;
     }
@@ -228,9 +229,9 @@ class _CreationPinState extends State<_CreationPin> {
   @override
   Widget build(BuildContext context) => _FondSecurite(
     titre: _premier == null
-        ? 'Créez votre code de sécurité'
-        : 'Confirmez votre code',
-    sousTitre: 'De 4 à 6 chiffres. Il protège l\'accès à vos chèques.',
+        ? tr('Créez votre code de sécurité')
+        : tr('Confirmez votre code'),
+    sousTitre: tr('De 4 à 6 chiffres. Il protège l\'accès à vos chèques.'),
     pin: _pin,
     erreur: _erreur,
     onTouche: (d) => setState(() {
@@ -311,9 +312,9 @@ class _FondSecurite extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 14),
-                const Text(
-                  'Cheque Manager Pro',
-                  style: TextStyle(
+                Text(
+                  tr('Cheque Manager Pro'),
+                  style: const TextStyle(
                     color: Colors.white70,
                     fontSize: 14,
                     letterSpacing: 0.5,
@@ -415,9 +416,9 @@ class _FondSecurite extends StatelessWidget {
                       color: Colors.white60,
                       size: 18,
                     ),
-                    label: const Text(
-                      'Effacer',
-                      style: TextStyle(color: Colors.white60),
+                    label: Text(
+                      tr('Effacer'),
+                      style: const TextStyle(color: Colors.white60),
                     ),
                   ),
               ],

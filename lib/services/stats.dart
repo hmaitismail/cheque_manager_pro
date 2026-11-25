@@ -1,5 +1,6 @@
 import '../core/format.dart';
 import '../models/models.dart';
+import '../l10n/i18n.dart';
 
 class Agregat {
   int nombre = 0;
@@ -58,7 +59,7 @@ class Stats {
       s.parStatut[c.statut]!.ajouter(c);
       s.parBanque.putIfAbsent(c.banqueId, Agregat.new).ajouter(c);
       final ville = c.ville.trim().isEmpty
-          ? 'Non renseignée'
+          ? tr('Non renseignée')
           : _capitaliser(c.ville.trim());
       s.parVille.putIfAbsent(ville, Agregat.new).ajouter(c);
       s.fraisRejetTotal += c.fraisRejet;

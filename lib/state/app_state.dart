@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../data/database.dart';
+import '../l10n/i18n.dart';
 import '../data/repository.dart';
 import '../models/models.dart';
 import '../services/rappels.dart';
@@ -21,6 +22,7 @@ class AppState extends ChangeNotifier {
   Stats stats = Stats.calculer(const []);
   ReglagesRappels reglages = ReglagesRappels();
   ThemeMode themeMode = ThemeMode.system;
+  Langue langue = Langue.fr;
   String entreprise = '';
   bool charge = false;
 
@@ -62,6 +64,8 @@ class AppState extends ChangeNotifier {
       _ => ThemeMode.system,
     };
     entreprise = await repo.parametre('entreprise') ?? '';
+    langue = Langue.fromCode(await repo.parametre('langue'));
+    I18n.langue = langue;
   }
 
   Future<void> rafraichir({bool reprogrammer = true}) async {
@@ -73,6 +77,8 @@ class AppState extends ChangeNotifier {
     notifyListeners();
     if (reprogrammer) await reprogrammerRappels();
   }
+
+  void licenceChangee() => notifyListeners();
 
   Future<void> reprogrammerRappels() => ServiceRappels.instance.reprogrammer(
     cheques,
@@ -97,6 +103,14 @@ class AppState extends ChangeNotifier {
       ThemeMode.system => 'systeme',
     });
     notifyListeners();
+  }
+
+  Future<void> definirLangue(Langue l) async {
+    langue = l;
+    I18n.langue = l;
+    await repo.definirParametre('langue', l.code);
+    notifyListeners();
+    await reprogrammerRappels();
   }
 
   Future<void> definirEntreprise(String v) async {

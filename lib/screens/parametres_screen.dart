@@ -7,11 +7,14 @@ import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../core/format.dart';
+import '../services/licence.dart';
 import '../services/rappels.dart';
 import '../services/sauvegarde.dart';
 import '../services/securite.dart';
 import '../state/app_state.dart';
 import '../widgets/communs.dart';
+import 'licence_screen.dart';
+import '../l10n/i18n.dart';
 
 class ParametresScreen extends StatefulWidget {
   const ParametresScreen({super.key});
@@ -32,23 +35,23 @@ class _ParametresScreenState extends State<ParametresScreen> {
   }
 
   Future<void> _changerPin() async {
-    final ancien = await _saisirPin('Code actuel');
+    final ancien = await _saisirPin(tr('Code actuel'));
     if (ancien == null || !mounted) return;
     if (!await _sec.verifierPin(ancien)) {
-      if (mounted) notifier(context, 'Code actuel incorrect', erreur: true);
+      if (mounted) notifier(context, tr('Code actuel incorrect'), erreur: true);
       return;
     }
     if (!mounted) return;
-    final nouveau = await _saisirPin('Nouveau code (4 à 6 chiffres)');
+    final nouveau = await _saisirPin(tr('Nouveau code (4 à 6 chiffres)'));
     if (nouveau == null || !mounted) return;
-    final confirmation = await _saisirPin('Confirmez le nouveau code');
+    final confirmation = await _saisirPin(tr('Confirmez le nouveau code'));
     if (confirmation == null || !mounted) return;
     if (nouveau != confirmation) {
-      notifier(context, 'Les codes ne correspondent pas', erreur: true);
+      notifier(context, tr('Les codes ne correspondent pas'), erreur: true);
       return;
     }
     await _sec.definirPin(nouveau);
-    if (mounted) notifier(context, 'Code modifié');
+    if (mounted) notifier(context, tr('Code modifié'));
   }
 
   Future<String?> _saisirPin(String titre) async {
@@ -68,14 +71,14 @@ class _ParametresScreenState extends State<ParametresScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Annuler'),
+            child: Text(tr('Annuler')),
           ),
           FilledButton(
             onPressed: () {
               final v = ctrl.text.trim();
               if (RegExp(r'^\d{4,6}$').hasMatch(v)) Navigator.pop(ctx, v);
             },
-            child: const Text('Valider'),
+            child: Text(tr('Valider')),
           ),
         ],
       ),
@@ -89,19 +92,19 @@ class _ParametresScreenState extends State<ParametresScreen> {
     final r = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Nom affiché sur les rapports'),
+        title: Text(tr('Nom affiché sur les rapports')),
         content: TextField(
           controller: ctrl,
-          decoration: const InputDecoration(hintText: 'Ex. Société ABC SARL'),
+          decoration: InputDecoration(hintText: tr('Ex. Société ABC SARL')),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Annuler'),
+            child: Text(tr('Annuler')),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, ctrl.text),
-            child: const Text('Enregistrer'),
+            child: Text(tr('Enregistrer')),
           ),
         ],
       ),
@@ -113,35 +116,59 @@ class _ParametresScreenState extends State<ParametresScreen> {
   @override
   Widget build(BuildContext context) {
     final app = context.watch<AppState>();
-    const delais = {
-      0: 'Immédiat',
-      1: '1 minute',
-      5: '5 minutes',
-      15: '15 minutes',
-      30: '30 minutes',
+    final delais = {
+      0: tr('Immédiat'),
+      1: tr('1 minute'),
+      5: tr('5 minutes'),
+      15: tr('15 minutes'),
+      30: tr('30 minutes'),
     };
     return Scaffold(
-      appBar: AppBar(title: const Text('Paramètres et sauvegardes')),
+      appBar: AppBar(title: Text(tr('Paramètres et sauvegardes'))),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(14, 0, 14, 40),
         children: [
-          const Section('Sécurité'),
+          Section(tr('Licence')),
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.workspace_premium_rounded),
+              title: Text(switch (ServiceLicence.instance.info.etat) {
+                EtatLicence.active =>
+                  ServiceLicence.instance.info.formule?.libelle ??
+                      tr('Licence active'),
+                EtatLicence.essai => tr(
+                  'Essai gratuit : {0} jour(s) restant(s)',
+                  [ServiceLicence.instance.info.joursRestants],
+                ),
+                EtatLicence.expiree => tr('Licence expirée'),
+              }),
+              subtitle: Text(
+                '${tr('Code de cet appareil')} : ${ServiceLicence.instance.codeAffiche}',
+              ),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const LicenceScreen()),
+              ),
+            ),
+          ),
+          Section(tr('Sécurité')),
           Card(
             child: Column(
               children: [
                 ListTile(
                   leading: const Icon(Icons.pin),
-                  title: const Text('Modifier le code PIN'),
+                  title: Text(tr('Modifier le code PIN')),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: _changerPin,
                 ),
                 SwitchListTile(
                   secondary: const Icon(Icons.fingerprint),
-                  title: const Text('Déverrouillage biométrique'),
+                  title: Text(tr('Déverrouillage biométrique')),
                   subtitle: Text(
                     _bioDispo
-                        ? 'Empreinte digitale / Face ID'
-                        : 'Non disponible sur cet appareil',
+                        ? tr('Empreinte digitale / Face ID')
+                        : tr('Non disponible sur cet appareil'),
                   ),
                   value: _sec.biometrieActive && _bioDispo,
                   onChanged: _bioDispo
@@ -154,9 +181,12 @@ class _ParametresScreenState extends State<ParametresScreen> {
                 ),
                 ListTile(
                   leading: const Icon(Icons.timer_outlined),
-                  title: const Text('Verrouillage automatique'),
+                  title: Text(tr('Verrouillage automatique')),
                   subtitle: Text(
-                    'Après ${delais[_sec.delaiVerrouMinutes] ?? '${_sec.delaiVerrouMinutes} min'} d\'inactivité',
+                    tr('Après {0} d\'inactivité', [
+                      delais[_sec.delaiVerrouMinutes] ??
+                          '${_sec.delaiVerrouMinutes} min',
+                    ]),
                   ),
                   trailing: DropdownButton<int>(
                     value: delais.containsKey(_sec.delaiVerrouMinutes)
@@ -178,25 +208,30 @@ class _ParametresScreenState extends State<ParametresScreen> {
                     },
                   ),
                 ),
-                const ListTile(
-                  leading: Icon(Icons.enhanced_encryption_outlined),
-                  title: Text('Chiffrement des données'),
+                ListTile(
+                  leading: const Icon(Icons.enhanced_encryption_outlined),
+                  title: Text(tr('Chiffrement des données')),
                   subtitle: Text(
-                    'Base de données chiffrée (AES-256, SQLCipher). Clé protégée par le système.',
+                    tr(
+                      'Base de données chiffrée (AES-256, SQLCipher). Clé protégée par le système.',
+                    ),
                   ),
                 ),
               ],
             ),
           ),
-          const Section('Rappels'),
+          Section(tr('Rappels')),
           Card(
             child: ListTile(
               leading: const Icon(Icons.notifications_active_outlined),
-              title: const Text('Réglages des rappels'),
+              title: Text(tr('Réglages des rappels')),
               subtitle: Text(
                 app.reglages.actifs
-                    ? 'Veille à ${_heure(app.reglages.heureVeille)} · jour J à ${_heure(app.reglages.heureJour)}'
-                    : 'Désactivés',
+                    ? tr('Veille à {0} · jour J à {1}', [
+                        _heure(app.reglages.heureVeille),
+                        _heure(app.reglages.heureJour),
+                      ])
+                    : tr('Désactivés'),
               ),
               trailing: const Icon(Icons.chevron_right),
               onTap: () => Navigator.push(
@@ -207,15 +242,30 @@ class _ParametresScreenState extends State<ParametresScreen> {
               ),
             ),
           ),
-          const Section('Sauvegardes'),
+          Section(tr('Sauvegardes')),
           const _Sauvegardes(),
-          const Section('Affichage'),
+          Section(tr('Affichage')),
           Card(
             child: Column(
               children: [
                 ListTile(
+                  leading: const Icon(Icons.translate_rounded),
+                  title: Text(tr('Langue')),
+                  trailing: DropdownButton<Langue>(
+                    value: app.langue,
+                    underline: const SizedBox(),
+                    items: [
+                      for (final l in Langue.values)
+                        DropdownMenuItem(value: l, child: Text(l.nom)),
+                    ],
+                    onChanged: (l) {
+                      if (l != null) app.definirLangue(l);
+                    },
+                  ),
+                ),
+                ListTile(
                   leading: const Icon(Icons.brightness_6_outlined),
-                  title: const Text('Thème'),
+                  title: Text(tr('Thème')),
                   trailing: SegmentedButton<ThemeMode>(
                     showSelectedIcon: false,
                     segments: const [
@@ -238,9 +288,11 @@ class _ParametresScreenState extends State<ParametresScreen> {
                 ),
                 ListTile(
                   leading: const Icon(Icons.business),
-                  title: const Text('Nom sur les rapports'),
+                  title: Text(tr('Nom sur les rapports')),
                   subtitle: Text(
-                    app.entreprise.isEmpty ? 'Non renseigné' : app.entreprise,
+                    app.entreprise.isEmpty
+                        ? tr('Non renseigné')
+                        : app.entreprise,
                   ),
                   trailing: const Icon(Icons.edit, size: 18),
                   onTap: () => _entreprise(app),
@@ -248,13 +300,15 @@ class _ParametresScreenState extends State<ParametresScreen> {
               ],
             ),
           ),
-          const Section('À propos'),
-          const Card(
+          Section(tr('À propos')),
+          Card(
             child: ListTile(
-              leading: Icon(Icons.info_outline),
-              title: Text('Cheque Manager Pro'),
+              leading: const Icon(Icons.info_outline),
+              title: Text(tr('Cheque Manager Pro')),
               subtitle: Text(
-                'Version 1.0.0 · Phase 1 (fonctionnement local)\nDevise : dirham marocain (MAD)',
+                tr(
+                  'Version 1.1.0 · Phase 1 (fonctionnement local)\nDevise : dirham marocain (MAD)',
+                ),
               ),
               isThreeLine: true,
             ),
@@ -295,16 +349,18 @@ class _SauvegardesState extends State<_Sauvegardes> {
       final f = await context.read<AppState>().sauvegardes.creer();
       await _charger();
       if (!mounted) return;
-      notifier(context, 'Sauvegarde créée');
+      notifier(context, tr('Sauvegarde créée'));
       await SharePlus.instance.share(
         ShareParams(
           files: [XFile(f.path)],
-          subject: 'Sauvegarde Cheque Manager Pro',
-          text: 'Conservez ce fichier en lieu sûr (Drive, e-mail, clé USB).',
+          subject: tr('Sauvegarde Cheque Manager Pro'),
+          text: tr(
+            'Conservez ce fichier en lieu sûr (Drive, e-mail, clé USB).',
+          ),
         ),
       );
     } catch (e) {
-      if (mounted) notifier(context, 'Échec : $e', erreur: true);
+      if (mounted) notifier(context, tr('Échec : {0}', [e]), erreur: true);
     } finally {
       if (mounted) setState(() => _enCours = false);
     }
@@ -318,12 +374,12 @@ class _SauvegardesState extends State<_Sauvegardes> {
       final date = DateTime.tryParse(m['date'] as String? ?? '');
       final ok = await confirmer(
         context,
-        titre: 'Restaurer cette sauvegarde ?',
-        message:
-            'Sauvegarde du ${Fmt.dateHeure(date)} · ${m['nb_cheques']} chèque(s).\n\n'
-            'Toutes les données actuelles seront remplacées. Une sauvegarde de sécurité '
-            'des données actuelles sera créée automatiquement avant la restauration.',
-        ok: 'Restaurer',
+        titre: tr('Restaurer cette sauvegarde ?'),
+        message: tr(
+          'Sauvegarde du {0} · {1} chèque(s).\n\nToutes les données actuelles seront remplacées. Une sauvegarde de sécurité des données actuelles sera créée automatiquement avant la restauration.',
+          [Fmt.dateHeure(date), m['nb_cheques']],
+        ),
+        ok: tr('Restaurer'),
         danger: true,
       );
       if (!ok) return;
@@ -331,10 +387,14 @@ class _SauvegardesState extends State<_Sauvegardes> {
       await app.sauvegardes.restaurer(f);
       await app.rafraichir();
       await _charger();
-      if (mounted) notifier(context, 'Restauration terminée');
+      if (mounted) notifier(context, tr('Restauration terminée'));
     } catch (e) {
       if (mounted) {
-        notifier(context, 'Restauration impossible : $e', erreur: true);
+        notifier(
+          context,
+          tr('Restauration impossible : {0}', [e]),
+          erreur: true,
+        );
       }
     } finally {
       if (mounted) setState(() => _enCours = false);
@@ -349,7 +409,7 @@ class _SauvegardesState extends State<_Sauvegardes> {
       if (mounted) {
         notifier(
           context,
-          'Choisissez un fichier ${ServiceSauvegarde.extension}',
+          tr('Choisissez un fichier {0}', [ServiceSauvegarde.extension]),
           erreur: true,
         );
       }
@@ -366,21 +426,24 @@ class _SauvegardesState extends State<_Sauvegardes> {
           if (_enCours) const LinearProgressIndicator(),
           ListTile(
             leading: const Icon(Icons.backup_outlined),
-            title: const Text('Créer et exporter une sauvegarde'),
-            subtitle: const Text('Données + photos + documents'),
+            title: Text(tr('Créer et exporter une sauvegarde')),
+            subtitle: Text(tr('Données + photos + documents')),
             onTap: _enCours ? null : _creer,
           ),
           ListTile(
             leading: const Icon(Icons.settings_backup_restore),
-            title: const Text('Restaurer depuis un fichier'),
-            subtitle: const Text('Fichier .cmpbak reçu ou enregistré'),
+            title: Text(tr('Restaurer depuis un fichier')),
+            subtitle: Text(tr('Fichier .cmpbak reçu ou enregistré')),
             onTap: _enCours ? null : _importer,
           ),
           const Divider(height: 1),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
             child: Text(
-              'Sauvegarde automatique quotidienne · ${_liste.length} sauvegarde(s) sur l\'appareil',
+              tr(
+                'Sauvegarde automatique quotidienne · {0} sauvegarde(s) sur l\'appareil',
+                [_liste.length],
+              ),
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ),
@@ -395,7 +458,10 @@ class _SauvegardesState extends State<_Sauvegardes> {
               ),
               title: Text(Fmt.dateHeure(s.date)),
               subtitle: Text(
-                '${p.basename(s.fichier.path)} · ${(s.taille / 1024).toStringAsFixed(0)} Ko',
+                tr('{0} · {1} Ko', [
+                  p.basename(s.fichier.path),
+                  (s.taille / 1024).toStringAsFixed(0),
+                ]),
               ),
               trailing: PopupMenuButton<String>(
                 onSelected: (a) async {
@@ -406,18 +472,19 @@ class _SauvegardesState extends State<_Sauvegardes> {
                     );
                   }
                 },
-                itemBuilder: (_) => const [
-                  PopupMenuItem(value: 'p', child: Text('Partager')),
-                  PopupMenuItem(value: 'r', child: Text('Restaurer')),
+                itemBuilder: (_) => [
+                  PopupMenuItem(value: 'p', child: Text(tr('Partager'))),
+                  PopupMenuItem(value: 'r', child: Text(tr('Restaurer'))),
                 ],
               ),
             ),
-          const Padding(
-            padding: EdgeInsets.fromLTRB(16, 4, 16, 12),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
             child: Text(
-              'Important : les sauvegardes restent sur le téléphone. Exportez-en une régulièrement '
-              'vers un autre support. La synchronisation cloud arrive en phase 2.',
-              style: TextStyle(fontSize: 12, color: Colors.orange),
+              tr(
+                'Important : les sauvegardes restent sur le téléphone. Exportez-en une régulièrement vers un autre support. La synchronisation cloud arrive en phase 2.',
+              ),
+              style: const TextStyle(fontSize: 12, color: Colors.orange),
             ),
           ),
         ],
@@ -474,7 +541,7 @@ class _ReglagesRappelsScreenState extends State<ReglagesRappelsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Rappels')),
+      appBar: AppBar(title: Text(tr('Rappels'))),
       body: ListView(
         padding: const EdgeInsets.all(14),
         children: [
@@ -482,8 +549,8 @@ class _ReglagesRappelsScreenState extends State<ReglagesRappelsScreen> {
             child: Column(
               children: [
                 SwitchListTile(
-                  title: const Text('Activer les rappels'),
-                  subtitle: const Text('Fonctionnent même application fermée'),
+                  title: Text(tr('Activer les rappels')),
+                  subtitle: Text(tr('Fonctionnent même application fermée')),
                   value: r.actifs,
                   onChanged: (v) async {
                     setState(() => r.actifs = v);
@@ -493,7 +560,7 @@ class _ReglagesRappelsScreenState extends State<ReglagesRappelsScreen> {
                 ListTile(
                   enabled: r.actifs,
                   leading: const Icon(Icons.event),
-                  title: const Text('Rappel la veille'),
+                  title: Text(tr('Rappel la veille')),
                   trailing: Text(
                     _heure(r.heureVeille),
                     style: const TextStyle(fontWeight: FontWeight.w700),
@@ -503,9 +570,9 @@ class _ReglagesRappelsScreenState extends State<ReglagesRappelsScreen> {
                 ListTile(
                   enabled: r.actifs,
                   leading: const Icon(Icons.today),
-                  title: const Text('Rappel le jour même'),
-                  subtitle: const Text(
-                    'Heure également utilisée pour les alertes de suivi',
+                  title: Text(tr('Rappel le jour même')),
+                  subtitle: Text(
+                    tr('Heure également utilisée pour les alertes de suivi'),
                   ),
                   trailing: Text(
                     _heure(r.heureJour),
@@ -514,9 +581,9 @@ class _ReglagesRappelsScreenState extends State<ReglagesRappelsScreen> {
                   onTap: () => _choisirHeure(false),
                 ),
                 SwitchListTile(
-                  title: const Text('Alerte chèques en retard'),
-                  subtitle: const Text(
-                    'Toujours en attente après la date de présentation',
+                  title: Text(tr('Alerte chèques en retard')),
+                  subtitle: Text(
+                    tr('Toujours en attente après la date de présentation'),
                   ),
                   value: r.alerteRetard,
                   onChanged: r.actifs
@@ -527,7 +594,7 @@ class _ReglagesRappelsScreenState extends State<ReglagesRappelsScreen> {
                       : null,
                 ),
                 SwitchListTile(
-                  title: const Text('Alerte impayés à régulariser'),
+                  title: Text(tr('Alerte impayés à régulariser')),
                   value: r.alerteImpayes,
                   onChanged: r.actifs
                       ? (v) async {
@@ -546,12 +613,13 @@ class _ReglagesRappelsScreenState extends State<ReglagesRappelsScreen> {
               await ServiceRappels.instance.testerMaintenant();
             },
             icon: const Icon(Icons.notifications),
-            label: const Text('Envoyer une notification de test'),
+            label: Text(tr('Envoyer une notification de test')),
           ),
           const SizedBox(height: 12),
           Text(
-            'Les rappels peuvent être désactivés individuellement depuis la fiche de chaque chèque '
-            '(Modifier > Rappels de présentation).',
+            tr(
+              'Les rappels peuvent être désactivés individuellement depuis la fiche de chaque chèque (Modifier > Rappels de présentation).',
+            ),
             style: Theme.of(context).textTheme.bodySmall,
           ),
         ],

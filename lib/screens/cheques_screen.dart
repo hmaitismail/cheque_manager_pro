@@ -7,6 +7,7 @@ import '../models/models.dart';
 import '../state/app_state.dart';
 import '../widgets/communs.dart';
 import 'cheque_detail_screen.dart';
+import '../l10n/i18n.dart';
 
 class ChequesScreen extends StatefulWidget {
   const ChequesScreen({super.key});
@@ -44,10 +45,10 @@ class ChequesScreenState extends State<ChequesScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Chèques'),
+        title: Text(tr('Chèques')),
         actions: [
           PopupMenuButton<Tri>(
-            tooltip: 'Trier',
+            tooltip: tr('Trier'),
             icon: const Icon(Icons.sort),
             initialValue: _f.tri,
             onSelected: (t) => setState(() => _f.tri = t),
@@ -56,7 +57,7 @@ class ChequesScreenState extends State<ChequesScreen> {
                 .toList(),
           ),
           IconButton(
-            tooltip: 'Filtres',
+            tooltip: tr('Filtres'),
             icon: Badge(
               isLabelVisible: _f.nbCriteres > 0,
               label: Text('${_f.nbCriteres}'),
@@ -74,7 +75,7 @@ class ChequesScreenState extends State<ChequesScreen> {
               onChanged: (v) => setState(() => _f.texte = v),
               style: const TextStyle(color: Colors.black87),
               decoration: InputDecoration(
-                hintText: 'N°, bénéficiaire, banque, montant, ville...',
+                hintText: tr('N°, bénéficiaire, banque, montant, ville...'),
                 prefixIcon: const Icon(Icons.search),
                 fillColor: Colors.white,
                 isDense: true,
@@ -107,7 +108,7 @@ class ChequesScreenState extends State<ChequesScreen> {
                 Padding(
                   padding: const EdgeInsets.only(right: 6),
                   child: FilterChip(
-                    label: const Text('En retard'),
+                    label: Text(tr('En retard')),
                     selected: _f.retardSeulement,
                     onSelected: (v) => setState(() => _f.retardSeulement = v),
                   ),
@@ -132,12 +133,12 @@ class ChequesScreenState extends State<ChequesScreen> {
             child: Row(
               children: [
                 Text(
-                  '${liste.length} chèque(s)',
+                  tr('{0} chèque(s)', [liste.length]),
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
                 const Spacer(),
                 Text(
-                  'Total : ${Fmt.mad(total)}',
+                  tr('Total : {0}', [Fmt.mad(total)]),
                   style: Theme.of(
                     context,
                   ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w700),
@@ -146,7 +147,7 @@ class ChequesScreenState extends State<ChequesScreen> {
                   TextButton(
                     onPressed: () =>
                         appliquerFiltre(FiltreCheques()..tri = _f.tri),
-                    child: const Text('Effacer'),
+                    child: Text(tr('Effacer')),
                   ),
               ],
             ),
@@ -154,9 +155,9 @@ class ChequesScreenState extends State<ChequesScreen> {
           const Divider(height: 1),
           Expanded(
             child: liste.isEmpty
-                ? const Vide(
+                ? Vide(
                     icone: Icons.search_off,
-                    texte: 'Aucun chèque ne correspond.',
+                    texte: tr('Aucun chèque ne correspond.'),
                   )
                 : ListView.separated(
                     padding: const EdgeInsets.only(bottom: 96),
@@ -249,14 +250,14 @@ class _FeuilleFiltresState extends State<_FeuilleFiltres> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Filtres', style: Theme.of(context).textTheme.titleLarge),
+            Text(tr('Filtres'), style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 16),
             DropdownButtonFormField<String?>(
               initialValue: f.banqueId,
               isExpanded: true,
-              decoration: const InputDecoration(labelText: 'Banque'),
+              decoration: InputDecoration(labelText: tr('Banque')),
               items: [
-                const DropdownMenuItem(value: null, child: Text('Toutes')),
+                DropdownMenuItem(value: null, child: Text(tr('Toutes'))),
                 ...app.banques.map(
                   (b) => DropdownMenuItem(value: b.id, child: Text(b.libelle)),
                 ),
@@ -273,14 +274,14 @@ class _FeuilleFiltresState extends State<_FeuilleFiltres> {
                   ? f.chequierId
                   : null,
               isExpanded: true,
-              decoration: const InputDecoration(labelText: 'Chéquier'),
+              decoration: InputDecoration(labelText: tr('Chéquier')),
               items: [
-                const DropdownMenuItem(value: null, child: Text('Tous')),
+                DropdownMenuItem(value: null, child: Text(tr('Tous'))),
                 ...chequiers.map(
                   (c) => DropdownMenuItem(
                     value: c.id,
                     child: Text(
-                      'N° ${c.numero} · ${app.nomBanque(c.banqueId)}',
+                      tr('N° {0} · {1}', [c.numero, app.nomBanque(c.banqueId)]),
                     ),
                   ),
                 ),
@@ -293,9 +294,9 @@ class _FeuilleFiltresState extends State<_FeuilleFiltres> {
                   ? f.ville
                   : null,
               isExpanded: true,
-              decoration: const InputDecoration(labelText: 'Ville'),
+              decoration: InputDecoration(labelText: tr('Ville')),
               items: [
-                const DropdownMenuItem(value: null, child: Text('Toutes')),
+                DropdownMenuItem(value: null, child: Text(tr('Toutes'))),
                 ...app.villesConnues.map(
                   (v) => DropdownMenuItem(value: v, child: Text(v)),
                 ),
@@ -308,7 +309,7 @@ class _FeuilleFiltresState extends State<_FeuilleFiltres> {
                 Expanded(
                   child: OutlinedButton.icon(
                     icon: const Icon(Icons.date_range, size: 18),
-                    label: Text(f.du == null ? 'Du...' : Fmt.date(f.du)),
+                    label: Text(f.du == null ? tr('Du...') : Fmt.date(f.du)),
                     onPressed: () async {
                       final d = await choisirDate(
                         context,
@@ -322,7 +323,7 @@ class _FeuilleFiltresState extends State<_FeuilleFiltres> {
                 Expanded(
                   child: OutlinedButton.icon(
                     icon: const Icon(Icons.date_range, size: 18),
-                    label: Text(f.au == null ? 'Au...' : Fmt.date(f.au)),
+                    label: Text(f.au == null ? tr('Au...') : Fmt.date(f.au)),
                     onPressed: () async {
                       final d = await choisirDate(
                         context,
@@ -345,7 +346,9 @@ class _FeuilleFiltresState extends State<_FeuilleFiltres> {
             Padding(
               padding: const EdgeInsets.only(top: 4, left: 4),
               child: Text(
-                'Période appliquée aux dates d\'édition et de présentation.',
+                tr(
+                  'Période appliquée aux dates d\'édition et de présentation.',
+                ),
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ),
@@ -358,8 +361,8 @@ class _FeuilleFiltresState extends State<_FeuilleFiltres> {
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
-                    decoration: const InputDecoration(
-                      labelText: 'Montant min.',
+                    decoration: InputDecoration(
+                      labelText: tr('Montant min.'),
                       suffixText: 'MAD',
                     ),
                   ),
@@ -371,8 +374,8 @@ class _FeuilleFiltresState extends State<_FeuilleFiltres> {
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
-                    decoration: const InputDecoration(
-                      labelText: 'Montant max.',
+                    decoration: InputDecoration(
+                      labelText: tr('Montant max.'),
                       suffixText: 'MAD',
                     ),
                   ),
@@ -382,7 +385,7 @@ class _FeuilleFiltresState extends State<_FeuilleFiltres> {
             const SizedBox(height: 8),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
-              title: const Text('Uniquement les chèques en retard'),
+              title: Text(tr('Uniquement les chèques en retard')),
               value: f.retardSeulement,
               onChanged: (v) => setState(() => f.retardSeulement = v),
             ),
@@ -393,7 +396,7 @@ class _FeuilleFiltresState extends State<_FeuilleFiltres> {
                 f.montantMax = Fmt.parseMontant(_max.text);
                 Navigator.pop(context, f);
               },
-              child: const Text('Appliquer'),
+              child: Text(tr('Appliquer')),
             ),
           ],
         ),

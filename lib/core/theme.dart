@@ -14,6 +14,9 @@ class AppColors {
 class AppTheme {
   AppTheme._();
 
+  /// Polices de secours (utilisées par les captures d'écran automatiques).
+  static List<String> policesSecours = const [];
+
   static ThemeData clair() {
     final scheme = ColorScheme.fromSeed(
       seedColor: AppColors.bleuNuit,
@@ -42,6 +45,7 @@ class AppTheme {
     final dark = scheme.brightness == Brightness.dark;
     return ThemeData(
       useMaterial3: true,
+      fontFamilyFallback: policesSecours.isEmpty ? null : policesSecours,
       colorScheme: scheme,
       appBarTheme: AppBarTheme(
         backgroundColor: dark ? AppColors.fondSombre : AppColors.bleuNuit,

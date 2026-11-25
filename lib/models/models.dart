@@ -1,3 +1,4 @@
+import '../l10n/i18n.dart';
 import 'dart:convert';
 
 import '../core/format.dart';
@@ -68,9 +69,10 @@ enum StatutChequier {
   termine('termine', 'Terminé'),
   archive('archive', 'Archivé');
 
-  const StatutChequier(this.code, this.libelle);
+  const StatutChequier(this.code, this._libelle);
   final String code;
-  final String libelle;
+  final String _libelle;
+  String get libelle => tr(_libelle);
   static StatutChequier fromCode(String c) => StatutChequier.values.firstWhere(
     (s) => s.code == c,
     orElse: () => StatutChequier.actif,

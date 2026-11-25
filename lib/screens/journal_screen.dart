@@ -6,6 +6,7 @@ import '../models/models.dart';
 import '../state/app_state.dart';
 import '../widgets/communs.dart';
 import 'cheque_detail_screen.dart';
+import '../l10n/i18n.dart';
 
 /// Historique global : journal de toutes les opérations (§9 journalisation).
 class JournalScreen extends StatefulWidget {
@@ -20,13 +21,13 @@ class _JournalScreenState extends State<JournalScreen> {
   String _q = '';
   bool _charge = false;
 
-  static const _filtres = {
-    'tout': 'Tout',
-    'cheque': 'Chèques',
-    'piece': 'Pièces jointes',
-    'chequier': 'Chéquiers',
-    'banque': 'Banques',
-    'systeme': 'Système',
+  static Map<String, String> get _filtres => {
+    'tout': tr('Tout'),
+    'cheque': tr('Chèques'),
+    'piece': tr('Pièces jointes'),
+    'chequier': tr('Chéquiers'),
+    'banque': tr('Banques'),
+    'systeme': tr('Système'),
   };
 
   @override
@@ -67,7 +68,7 @@ class _JournalScreenState extends State<JournalScreen> {
         )
         .toList();
     return Scaffold(
-      appBar: AppBar(title: const Text('Historique des opérations')),
+      appBar: AppBar(title: Text(tr('Historique des opérations'))),
       body: !_charge
           ? const Center(child: CircularProgressIndicator())
           : Column(
@@ -75,9 +76,9 @@ class _JournalScreenState extends State<JournalScreen> {
                 Padding(
                   padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
                   child: TextField(
-                    decoration: const InputDecoration(
-                      hintText: 'Rechercher dans l\'historique',
-                      prefixIcon: Icon(Icons.search),
+                    decoration: InputDecoration(
+                      hintText: tr('Rechercher dans l\'historique'),
+                      prefixIcon: const Icon(Icons.search),
                       isDense: true,
                     ),
                     onChanged: (v) => setState(() => _q = v),
@@ -108,9 +109,9 @@ class _JournalScreenState extends State<JournalScreen> {
                 ),
                 Expanded(
                   child: liste.isEmpty
-                      ? const Vide(
+                      ? Vide(
                           icone: Icons.history,
-                          texte: 'Aucune opération.',
+                          texte: tr('Aucune opération.'),
                         )
                       : RefreshIndicator(
                           onRefresh: _charger,

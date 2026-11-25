@@ -6,6 +6,7 @@ import 'package:timezone/timezone.dart' as tz;
 import '../models/models.dart';
 
 import 'plan_rappels.dart';
+import '../l10n/i18n.dart';
 
 export 'plan_rappels.dart';
 
@@ -91,8 +92,10 @@ class ServiceRappels {
           notificationDetails: NotificationDetails(
             android: AndroidNotificationDetails(
               'rappels_cheques',
-              'Rappels des chèques',
-              channelDescription: 'Rappels de présentation, retards et impayés',
+              tr('Rappels des chèques'),
+              channelDescription: tr(
+                'Rappels de présentation, retards et impayés',
+              ),
               importance: Importance.high,
               priority: Priority.high,
               styleInformation: BigTextStyleInformation(p.corps),
@@ -111,16 +114,16 @@ class ServiceRappels {
   Future<void> testerMaintenant() async {
     await _plugin.show(
       id: 3,
-      title: 'Cheque Manager Pro',
-      body: 'Les notifications fonctionnent correctement.',
-      notificationDetails: const NotificationDetails(
+      title: tr('Cheque Manager Pro'),
+      body: tr('Les notifications fonctionnent correctement.'),
+      notificationDetails: NotificationDetails(
         android: AndroidNotificationDetails(
           'rappels_cheques',
-          'Rappels des chèques',
+          tr('Rappels des chèques'),
           importance: Importance.high,
           priority: Priority.high,
         ),
-        iOS: DarwinNotificationDetails(),
+        iOS: const DarwinNotificationDetails(),
       ),
     );
   }

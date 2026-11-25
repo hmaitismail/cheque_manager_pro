@@ -7,6 +7,7 @@ import 'package:path_provider/path_provider.dart';
 
 import '../data/database.dart';
 import '../data/repository.dart';
+import '../l10n/i18n.dart';
 
 class InfoSauvegarde {
   final File fichier;
@@ -66,7 +67,7 @@ class ServiceSauvegarde {
     final f = File(p.join((await dossier()).path, nom));
     await f.writeAsBytes(zip, flush: true);
     await _repo.definirParametre('derniere_sauvegarde', n.toIso8601String());
-    await _repo.logSysteme('sauvegarde', 'Sauvegarde créée : $nom');
+    await _repo.logSysteme('sauvegarde', tr('Sauvegarde créée : {0}', [nom]));
     await _purger();
     return f;
   }
@@ -108,17 +109,17 @@ class ServiceSauvegarde {
   Future<Map<String, dynamic>> lireManifeste(File f) async {
     final archive = ZipDecoder().decodeBytes(await f.readAsBytes());
     final m = archive.findFile('manifeste.json');
-    if (m == null) throw Exception('Fichier de sauvegarde invalide.');
+    if (m == null) throw Exception(tr('Fichier de sauvegarde invalide.'));
     final manifeste =
         jsonDecode(utf8.decode(m.content)) as Map<String, dynamic>;
     if (manifeste['format'] != format) {
       throw Exception(
-        'Ce fichier n\'est pas une sauvegarde Cheque Manager Pro.',
+        tr('Ce fichier n\'est pas une sauvegarde Cheque Manager Pro.'),
       );
     }
     if ((manifeste['schema'] as int) > AppDatabase.version) {
       throw Exception(
-        'Sauvegarde créée par une version plus récente de l\'application.',
+        tr('Sauvegarde créée par une version plus récente de l\'application.'),
       );
     }
     return manifeste;
@@ -129,7 +130,9 @@ class ServiceSauvegarde {
     await lireManifeste(f);
     final archive = ZipDecoder().decodeBytes(await f.readAsBytes());
     final donnees = archive.findFile('donnees.json');
-    if (donnees == null) throw Exception('Données absentes de la sauvegarde.');
+    if (donnees == null) {
+      throw Exception(tr('Données absentes de la sauvegarde.'));
+    }
     final data =
         jsonDecode(utf8.decode(donnees.content)) as Map<String, dynamic>;
 
@@ -157,7 +160,7 @@ class ServiceSauvegarde {
     }
     await _repo.logSysteme(
       'restauration',
-      'Restauration depuis ${p.basename(f.path)}',
+      tr('Restauration depuis {0}', [p.basename(f.path)]),
     );
   }
 }

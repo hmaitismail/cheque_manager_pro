@@ -10,7 +10,9 @@ import '../services/validation.dart';
 import '../state/app_state.dart';
 import '../widgets/champ_suggestions.dart';
 import '../widgets/communs.dart';
+import 'licence_screen.dart';
 import '../widgets/pieces.dart';
+import '../l10n/i18n.dart';
 
 /// Création / modification d'un chèque, avec tous les contrôles (§3 et §12).
 class ChequeFormScreen extends StatefulWidget {
@@ -103,6 +105,8 @@ class _ChequeFormScreenState extends State<ChequeFormScreen> {
   }
 
   Future<void> _enregistrer() async {
+    if (!await exigerLicence(context)) return;
+    if (!mounted) return;
     if (!_form.currentState!.validate()) return;
     final app = context.read<AppState>();
     final ch = _chequierId == null ? null : app.chequier(_chequierId!);
@@ -151,12 +155,12 @@ class _ChequeFormScreenState extends State<ChequeFormScreen> {
           context: context,
           builder: (ctx) => AlertDialog(
             icon: const Icon(Icons.block, color: Colors.red),
-            title: const Text('Enregistrement impossible'),
+            title: Text(tr('Enregistrement impossible')),
             content: Text(ctrl.erreurs.map((e) => '• $e').join('\n')),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx),
-                child: const Text('Corriger'),
+                child: Text(tr('Corriger')),
               ),
             ],
           ),
@@ -166,10 +170,11 @@ class _ChequeFormScreenState extends State<ChequeFormScreen> {
       if (ctrl.avertissements.isNotEmpty) {
         final ok = await confirmer(
           context,
-          titre: 'Vérification',
-          message:
-              '${ctrl.avertissements.map((e) => '• $e').join('\n')}\n\nEnregistrer quand même ?',
-          ok: 'Enregistrer',
+          titre: tr('Vérification'),
+          message: tr('{0}\n\nEnregistrer quand même ?', [
+            ctrl.avertissements.map((e) => '• $e').join('\n'),
+          ]),
+          ok: tr('Enregistrer'),
         );
         if (!ok) return;
       }
@@ -182,14 +187,14 @@ class _ChequeFormScreenState extends State<ChequeFormScreen> {
       notifier(
         context,
         _nouveau
-            ? 'Chèque n° ${_numero.text} enregistré'
-            : 'Modifications enregistrées',
+            ? tr('Chèque n° {0} enregistré', [_numero.text])
+            : tr('Modifications enregistrées'),
       );
       Navigator.pop(context, true);
     } on RegleException catch (e) {
       if (mounted) notifier(context, e.message, erreur: true);
     } catch (e) {
-      if (mounted) notifier(context, 'Erreur : $e', erreur: true);
+      if (mounted) notifier(context, tr('Erreur : {0}', [e]), erreur: true);
     } finally {
       if (mounted) setState(() => _enCours = false);
     }
@@ -224,7 +229,7 @@ class _ChequeFormScreenState extends State<ChequeFormScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(_nouveau ? 'Nouveau chèque' : 'Modifier le chèque'),
+        title: Text(_nouveau ? tr('Nouveau chèque') : tr('Modifier le chèque')),
       ),
       body: Form(
         key: _form,
@@ -234,23 +239,25 @@ class _ChequeFormScreenState extends State<ChequeFormScreen> {
             if (_verrouille)
               Card(
                 color: Colors.amber.withValues(alpha: 0.15),
-                child: const Padding(
-                  padding: EdgeInsets.all(12),
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
                   child: Text(
-                    'Chèque clôturé : le compte, le numéro et le montant ne sont plus modifiables.',
+                    tr(
+                      'Chèque clôturé : le compte, le numéro et le montant ne sont plus modifiables.',
+                    ),
                   ),
                 ),
               ),
-            const Section('Compte et chéquier'),
+            Section(tr('Compte et chéquier')),
             DropdownButtonFormField<String>(
               key: ValueKey('bq-$_banqueId'),
               initialValue: banques.any((b) => b.id == _banqueId)
                   ? _banqueId
                   : null,
               isExpanded: true,
-              decoration: const InputDecoration(
-                labelText: 'Banque *',
-                prefixIcon: Icon(Icons.account_balance),
+              decoration: InputDecoration(
+                labelText: tr('Banque *'),
+                prefixIcon: const Icon(Icons.account_balance),
               ),
               items: banques
                   .map(
@@ -267,7 +274,7 @@ class _ChequeFormScreenState extends State<ChequeFormScreen> {
                         premiers.isEmpty ? null : premiers.first.id,
                       );
                     },
-              validator: (v) => v == null ? 'Obligatoire' : null,
+              validator: (v) => v == null ? tr('Obligatoire') : null,
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
@@ -277,45 +284,51 @@ class _ChequeFormScreenState extends State<ChequeFormScreen> {
                   : null,
               isExpanded: true,
               decoration: InputDecoration(
-                labelText: 'Chéquier *',
+                labelText: tr('Chéquier *'),
                 prefixIcon: const Icon(Icons.book),
                 helperText: ch == null
                     ? null
-                    : 'Plage ${ch.plage} · ${ch.disponibles} disponible(s)',
+                    : tr('Plage {0} · {1} disponible(s)', [
+                        ch.plage,
+                        ch.disponibles,
+                      ]),
               ),
               items: chequiers
                   .map(
                     (c) => DropdownMenuItem(
                       value: c.id,
-                      child: Text('N° ${c.numero}  (${c.plage})'),
+                      child: Text(tr('N° {0}  ({1})', [c.numero, c.plage])),
                     ),
                   )
                   .toList(),
               onChanged: _verrouille ? null : _choisirChequier,
-              validator: (v) =>
-                  v == null ? 'Aucun chéquier actif pour cette banque' : null,
+              validator: (v) => v == null
+                  ? tr('Aucun chéquier actif pour cette banque')
+                  : null,
             ),
             const SizedBox(height: 12),
             TextFormField(
               controller: _numero,
               enabled: !_verrouille,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Numéro du chèque *',
-                prefixIcon: Icon(Icons.tag),
+              decoration: InputDecoration(
+                labelText: tr('Numéro du chèque *'),
+                prefixIcon: const Icon(Icons.tag),
               ),
               validator: (v) {
                 final t = (v ?? '').trim();
-                if (t.isEmpty) return 'Obligatoire';
-                if (!RegExp(r'^\d+$').hasMatch(t)) return 'Chiffres uniquement';
+                if (t.isEmpty) return tr('Obligatoire');
+                if (!RegExp(r'^\d+$').hasMatch(t)) {
+                  return tr('Chiffres uniquement');
+                }
                 final n = int.parse(t);
                 if (ch != null && !ch.contient(n)) {
-                  return 'Hors de la plage du chéquier (${ch.plage})';
+                  return tr('Hors de la plage du chéquier ({0})', [ch.plage]);
                 }
                 return null;
               },
             ),
-            const Section('Paiement'),
+            Section(tr('Paiement')),
             TextFormField(
               controller: _montant,
               enabled: !_verrouille,
@@ -323,15 +336,15 @@ class _ChequeFormScreenState extends State<ChequeFormScreen> {
                 decimal: true,
               ),
               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
-              decoration: const InputDecoration(
-                labelText: 'Montant *',
+              decoration: InputDecoration(
+                labelText: tr('Montant *'),
                 suffixText: 'MAD',
-                prefixIcon: Icon(Icons.payments),
+                prefixIcon: const Icon(Icons.payments),
               ),
               validator: (v) {
                 final m = Fmt.parseMontant(v ?? '');
-                if (m == null) return 'Montant invalide (ex. 15000,50)';
-                if (m <= 0) return 'Le montant doit être supérieur à zéro';
+                if (m == null) return tr('Montant invalide (ex. 15000,50)');
+                if (m <= 0) return tr('Le montant doit être supérieur à zéro');
                 return null;
               },
             ),
@@ -339,32 +352,33 @@ class _ChequeFormScreenState extends State<ChequeFormScreen> {
             ChampSuggestions(
               controller: _beneficiaire,
               suggestions: app.beneficiairesConnus,
-              label: 'Bénéficiaire (à l\'ordre de) *',
+              label: tr('Bénéficiaire (à l\'ordre de) *'),
               icone: Icons.person,
-              validator: (v) => (v ?? '').trim().isEmpty ? 'Obligatoire' : null,
+              validator: (v) =>
+                  (v ?? '').trim().isEmpty ? tr('Obligatoire') : null,
             ),
             const SizedBox(height: 12),
             ChampSuggestions(
               controller: _ville,
               suggestions: app.villesConnues,
-              label: 'Ville de présentation / remise',
+              label: tr('Ville de présentation / remise'),
               icone: Icons.location_city,
             ),
             const SizedBox(height: 12),
             TextFormField(
               controller: _objet,
               textCapitalization: TextCapitalization.sentences,
-              decoration: const InputDecoration(
-                labelText: 'Objet / motif du paiement',
-                prefixIcon: Icon(Icons.description),
+              decoration: InputDecoration(
+                labelText: tr('Objet / motif du paiement'),
+                prefixIcon: const Icon(Icons.description),
               ),
             ),
-            const Section('Dates'),
+            Section(tr('Dates')),
             Row(
               children: [
                 Expanded(
                   child: champDate(
-                    'Date d\'édition *',
+                    tr('Date d\'édition *'),
                     _edition,
                     (d) => _edition = d,
                   ),
@@ -372,7 +386,7 @@ class _ChequeFormScreenState extends State<ChequeFormScreen> {
                 const SizedBox(width: 10),
                 Expanded(
                   child: champDate(
-                    'Présentation prévue *',
+                    tr('Présentation prévue *'),
                     _presentation,
                     (d) => _presentation = d,
                   ),
@@ -381,8 +395,8 @@ class _ChequeFormScreenState extends State<ChequeFormScreen> {
             ),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
-              title: const Text('Rappels de présentation'),
-              subtitle: const Text('La veille et le jour même'),
+              title: Text(tr('Rappels de présentation')),
+              subtitle: Text(tr('La veille et le jour même')),
               value: _rappels,
               onChanged: (v) => setState(() => _rappels = v),
             ),
@@ -391,26 +405,26 @@ class _ChequeFormScreenState extends State<ChequeFormScreen> {
               controller: _observations,
               maxLines: 3,
               textCapitalization: TextCapitalization.sentences,
-              decoration: const InputDecoration(
-                labelText: 'Observations',
+              decoration: InputDecoration(
+                labelText: tr('Observations'),
                 alignLabelWithHint: true,
               ),
             ),
             if (_nouveau) ...[
               Section(
-                'Pièces jointes',
+                tr('Pièces jointes'),
                 action: TextButton.icon(
                   onPressed: () async {
                     final f = await choisirPiece(context);
                     if (f != null) setState(() => _pieces.add(f));
                   },
                   icon: const Icon(Icons.add_a_photo, size: 18),
-                  label: const Text('Ajouter'),
+                  label: Text(tr('Ajouter')),
                 ),
               ),
               if (_pieces.isEmpty)
                 Text(
-                  'Photographiez le chèque ou joignez un PDF (facultatif).',
+                  tr('Photographiez le chèque ou joignez un PDF (facultatif).'),
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               Wrap(
@@ -478,8 +492,8 @@ class _ChequeFormScreenState extends State<ChequeFormScreen> {
                 : const Icon(Icons.check),
             label: Text(
               _nouveau
-                  ? 'Enregistrer le chèque'
-                  : 'Enregistrer les modifications',
+                  ? tr('Enregistrer le chèque')
+                  : tr('Enregistrer les modifications'),
             ),
           ),
         ),

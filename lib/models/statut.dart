@@ -1,3 +1,4 @@
+import '../l10n/i18n.dart';
 import 'package:flutter/material.dart';
 
 /// Statuts d'un chèque et transitions autorisées (cahier des charges §4).
@@ -9,9 +10,10 @@ enum Statut {
   recupere('recupere', 'Récupéré', Color(0xFF8B5CF6), Icons.assignment_return),
   detruit('detruit', 'Détruit', Color(0xFF64748B), Icons.delete_forever);
 
-  const Statut(this.code, this.libelle, this.couleur, this.icone);
+  const Statut(this.code, this._libelle, this.couleur, this.icone);
   final String code;
-  final String libelle;
+  final String _libelle;
+  String get libelle => tr(_libelle);
   final Color couleur;
   final IconData icone;
 

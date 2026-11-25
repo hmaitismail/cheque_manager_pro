@@ -1,5 +1,6 @@
 import '../core/format.dart';
 import '../models/models.dart';
+import '../l10n/i18n.dart';
 
 class ReglagesRappels {
   bool actifs;
@@ -90,16 +91,19 @@ class PlanificateurRappels {
       if (!c.rappelsActifs) continue;
 
       final jp = Fmt.jour(c.datePresentation);
-      final details =
-          'Chèque n° ${numero(c)} - ${Fmt.mad(c.montant)}\nBénéficiaire : ${c.beneficiaire}';
+      final details = tr('Chèque n° {0} - {1}\nBénéficiaire : {2}', [
+        numero(c),
+        Fmt.mad(c.montant),
+        c.beneficiaire,
+      ]);
       final veille = _a(jp.subtract(const Duration(days: 1)), r.heureVeille);
       if (veille.isAfter(maintenant)) {
         plan.add(
           PlanRappel(
             idPour(c.id, 0),
             veille,
-            'Présentation demain',
-            'Attention, ce chèque sera présenté demain.\n$details',
+            tr('Présentation demain'),
+            tr('Attention, ce chèque sera présenté demain.\n{0}', [details]),
             c.id,
           ),
         );
@@ -110,8 +114,10 @@ class PlanificateurRappels {
           PlanRappel(
             idPour(c.id, 1),
             jour,
-            'Présentation aujourd\'hui',
-            'Rappel, ce chèque doit être présenté aujourd\'hui.\n$details',
+            tr('Présentation aujourd\'hui'),
+            tr('Rappel, ce chèque doit être présenté aujourd\'hui.\n{0}', [
+              details,
+            ]),
             c.id,
           ),
         );
@@ -124,8 +130,11 @@ class PlanificateurRappels {
           PlanRappel(
             idPour(c.id, 2),
             retard,
-            'Chèque en retard',
-            'Ce chèque est toujours en attente après sa date de présentation.\n$details',
+            tr('Chèque en retard'),
+            tr(
+              'Ce chèque est toujours en attente après sa date de présentation.\n{0}',
+              [details],
+            ),
             c.id,
           ),
         );
@@ -142,8 +151,10 @@ class PlanificateurRappels {
         PlanRappel(
           _idRetardGroupe,
           prochain,
-          '${retards.length} chèque(s) en retard',
-          'Montant total : ${Fmt.mad(total)}. Pensez à mettre à jour leur statut.',
+          tr('{0} chèque(s) en retard', [retards.length]),
+          tr('Montant total : {0}. Pensez à mettre à jour leur statut.', [
+            Fmt.mad(total),
+          ]),
           null,
         ),
       );
@@ -154,8 +165,8 @@ class PlanificateurRappels {
         PlanRappel(
           _idImpayesGroupe,
           prochain.add(const Duration(minutes: 1)),
-          '${impayes.length} chèque(s) impayé(s) à régulariser',
-          'Montant total : ${Fmt.mad(total)}.',
+          tr('{0} chèque(s) impayé(s) à régulariser', [impayes.length]),
+          tr('Montant total : {0}.', [Fmt.mad(total)]),
           null,
         ),
       );

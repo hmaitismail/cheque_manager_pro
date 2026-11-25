@@ -9,8 +9,10 @@ import 'cheques_screen.dart';
 import 'corbeille_screen.dart';
 import 'dashboard_screen.dart';
 import 'journal_screen.dart';
+import 'licence_screen.dart';
 import 'parametres_screen.dart';
 import 'rapports_screen.dart';
+import '../l10n/i18n.dart';
 
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key});
@@ -32,6 +34,7 @@ class _HomeShellState extends State<HomeShell> {
           _listeKey.currentState?.appliquerFiltre(filtre);
           allerA(1);
         },
+        onOnglet: allerA,
       ),
       ChequesScreen(key: _listeKey),
       const CalendrierScreen(),
@@ -40,39 +43,42 @@ class _HomeShellState extends State<HomeShell> {
     ];
     return Scaffold(
       body: IndexedStack(index: _index, children: pages),
-      floatingActionButton: _index <= 2
+      floatingActionButton: _index == 1 || _index == 2
           ? FloatingActionButton.extended(
               heroTag: 'nouveau',
               onPressed: () => nouveauCheque(context),
               icon: const Icon(Icons.add),
-              label: const Text('Nouveau chèque'),
+              label: Text(tr('Nouveau chèque')),
             )
           : null,
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
         onDestinationSelected: allerA,
-        destinations: const [
+        destinations: [
           NavigationDestination(
-            icon: Icon(Icons.dashboard_outlined),
-            selectedIcon: Icon(Icons.dashboard),
-            label: 'Accueil',
+            icon: const Icon(Icons.dashboard_outlined),
+            selectedIcon: const Icon(Icons.dashboard),
+            label: tr('Accueil'),
           ),
           NavigationDestination(
-            icon: Icon(Icons.receipt_long_outlined),
-            selectedIcon: Icon(Icons.receipt_long),
-            label: 'Chèques',
+            icon: const Icon(Icons.receipt_long_outlined),
+            selectedIcon: const Icon(Icons.receipt_long),
+            label: tr('Chèques'),
           ),
           NavigationDestination(
-            icon: Icon(Icons.calendar_month_outlined),
-            selectedIcon: Icon(Icons.calendar_month),
-            label: 'Calendrier',
+            icon: const Icon(Icons.calendar_month_outlined),
+            selectedIcon: const Icon(Icons.calendar_month),
+            label: tr('Calendrier'),
           ),
           NavigationDestination(
-            icon: Icon(Icons.summarize_outlined),
-            selectedIcon: Icon(Icons.summarize),
-            label: 'Rapports',
+            icon: const Icon(Icons.summarize_outlined),
+            selectedIcon: const Icon(Icons.summarize),
+            label: tr('Rapports'),
           ),
-          NavigationDestination(icon: Icon(Icons.more_horiz), label: 'Plus'),
+          NavigationDestination(
+            icon: const Icon(Icons.more_horiz),
+            label: tr('Plus'),
+          ),
         ],
       ),
     );
@@ -80,23 +86,27 @@ class _HomeShellState extends State<HomeShell> {
 }
 
 Future<void> nouveauCheque(BuildContext context) async {
+  if (!await exigerLicence(context)) return;
+  if (!context.mounted) return;
   final app = context.read<AppState>();
   if (app.chequiers.where((c) => c.statut.code == 'actif').isEmpty) {
     final aller = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Aucun chéquier actif'),
-        content: const Text(
-          'Enregistrez d\'abord une banque et un chéquier avant de saisir un chèque.',
+        title: Text(tr('Aucun chéquier actif')),
+        content: Text(
+          tr(
+            'Enregistrez d\'abord une banque et un chéquier avant de saisir un chèque.',
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Plus tard'),
+            child: Text(tr('Plus tard')),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Configurer'),
+            child: Text(tr('Configurer')),
           ),
         ],
       ),
@@ -132,35 +142,38 @@ class _PlusScreen extends StatelessWidget {
       ),
     );
     return Scaffold(
-      appBar: AppBar(title: const Text('Plus')),
+      appBar: AppBar(title: Text(tr('Plus'))),
       body: ListView(
         padding: const EdgeInsets.all(14),
         children: [
           item(
             Icons.account_balance,
-            'Banques et chéquiers',
-            '${app.banques.length} compte(s) · ${app.chequiers.length} chéquier(s)',
+            tr('Banques et chéquiers'),
+            tr('{0} compte(s) · {1} chéquier(s)', [
+              app.banques.length,
+              app.chequiers.length,
+            ]),
             const BanquesScreen(),
           ),
           const SizedBox(height: 8),
           item(
             Icons.history,
-            'Historique',
-            'Journal de toutes les opérations',
+            tr('Historique'),
+            tr('Journal de toutes les opérations'),
             const JournalScreen(),
           ),
           const SizedBox(height: 8),
           item(
             Icons.delete_outline,
-            'Corbeille',
-            'Chèques supprimés, restaurables',
+            tr('Corbeille'),
+            tr('Chèques supprimés, restaurables'),
             const CorbeilleScreen(),
           ),
           const SizedBox(height: 8),
           item(
             Icons.settings,
-            'Paramètres et sauvegardes',
-            'Sécurité, rappels, thème, sauvegarde',
+            tr('Paramètres et sauvegardes'),
+            tr('Sécurité, rappels, thème, sauvegarde'),
             const ParametresScreen(),
           ),
         ],

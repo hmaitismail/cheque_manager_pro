@@ -9,9 +9,11 @@ import '../data/repository.dart';
 import '../models/models.dart';
 import '../state/app_state.dart';
 import '../widgets/communs.dart';
+import 'licence_screen.dart';
 import '../widgets/pieces.dart';
 import 'cheque_form_screen.dart';
 import 'statut_sheet.dart';
+import '../l10n/i18n.dart';
 
 /// Fiche détaillée : informations, actions de statut, pièces jointes,
 /// historique des statuts et journal des modifications (§7).
@@ -62,9 +64,13 @@ class _ChequeDetailScreenState extends State<ChequeDetailScreen> {
   }
 
   Future<void> _statut(Statut s) async {
+    if (!await exigerLicence(context)) return;
+    if (!mounted) return;
     if (await changerStatut(context, _c!, s)) {
       await _charger();
-      if (mounted) notifier(context, 'Statut mis à jour : ${s.libelle}');
+      if (mounted) {
+        notifier(context, tr('Statut mis à jour : {0}', [s.libelle]));
+      }
     }
   }
 
@@ -73,18 +79,20 @@ class _ChequeDetailScreenState extends State<ChequeDetailScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Mettre à la corbeille ?'),
+        title: Text(tr('Mettre à la corbeille ?')),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
-              'Le chèque pourra être restauré depuis la corbeille. L\'opération est tracée.',
+            Text(
+              tr(
+                'Le chèque pourra être restauré depuis la corbeille. L\'opération est tracée.',
+              ),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: motif,
-              decoration: const InputDecoration(
-                labelText: 'Motif (ex. erreur de saisie)',
+              decoration: InputDecoration(
+                labelText: tr('Motif (ex. erreur de saisie)'),
               ),
             ),
           ],
@@ -92,12 +100,12 @@ class _ChequeDetailScreenState extends State<ChequeDetailScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Annuler'),
+            child: Text(tr('Annuler')),
           ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: Colors.red.shade700),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Supprimer'),
+            child: Text(tr('Supprimer')),
           ),
         ],
       ),
@@ -107,10 +115,13 @@ class _ChequeDetailScreenState extends State<ChequeDetailScreen> {
     if (ok != true || !mounted) return;
     try {
       await context.read<AppState>().ecrire(
-        (r) => r.mettreALaCorbeille(_c!, texte.isEmpty ? 'non précisé' : texte),
+        (r) => r.mettreALaCorbeille(
+          _c!,
+          texte.isEmpty ? tr('non précisé') : texte,
+        ),
       );
       if (mounted) {
-        notifier(context, 'Chèque placé dans la corbeille');
+        notifier(context, tr('Chèque placé dans la corbeille'));
         Navigator.pop(context);
       }
     } on RegleException catch (e) {
@@ -119,11 +130,13 @@ class _ChequeDetailScreenState extends State<ChequeDetailScreen> {
   }
 
   Future<void> _ajouterPiece({PieceJointe? remplace}) async {
+    if (!await exigerLicence(context)) return;
+    if (!mounted) return;
     final f = await choisirPiece(
       context,
       titre: remplace == null
-          ? 'Ajouter une pièce jointe'
-          : 'Remplacer la pièce',
+          ? tr('Ajouter une pièce jointe')
+          : tr('Remplacer la pièce'),
     );
     if (f == null || !mounted) return;
     await context.read<AppState>().repo.ajouterPiece(
@@ -159,17 +172,17 @@ class _ChequeDetailScreenState extends State<ChequeDetailScreen> {
           children: [
             ListTile(
               leading: const Icon(Icons.open_in_new),
-              title: const Text('Ouvrir'),
+              title: Text(tr('Ouvrir')),
               onTap: () => Navigator.pop(ctx, 'o'),
             ),
             ListTile(
               leading: const Icon(Icons.swap_horiz),
-              title: const Text('Remplacer'),
+              title: Text(tr('Remplacer')),
               onTap: () => Navigator.pop(ctx, 'r'),
             ),
             ListTile(
               leading: const Icon(Icons.delete_outline, color: Colors.red),
-              title: const Text('Retirer'),
+              title: Text(tr('Retirer')),
               onTap: () => Navigator.pop(ctx, 's'),
             ),
           ],
@@ -185,9 +198,9 @@ class _ChequeDetailScreenState extends State<ChequeDetailScreen> {
       case 's':
         if (await confirmer(
           context,
-          titre: 'Retirer la pièce jointe ?',
-          message: 'Le fichier reste archivé pour la traçabilité.',
-          ok: 'Retirer',
+          titre: tr('Retirer la pièce jointe ?'),
+          message: tr('Le fichier reste archivé pour la traçabilité.'),
+          ok: tr('Retirer'),
           danger: true,
         )) {
           if (!mounted) return;
@@ -207,7 +220,7 @@ class _ChequeDetailScreenState extends State<ChequeDetailScreen> {
     if (c == null) {
       return Scaffold(
         appBar: AppBar(),
-        body: const Vide(icone: Icons.search_off, texte: 'Chèque introuvable.'),
+        body: Vide(icone: Icons.search_off, texte: tr('Chèque introuvable.')),
       );
     }
     final t = Theme.of(context).textTheme;
@@ -239,13 +252,15 @@ class _ChequeDetailScreenState extends State<ChequeDetailScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Chèque n° ${app.numero(c)}'),
+        title: Text(tr('Chèque n° {0}', [app.numero(c)])),
         actions: [
           if (c.deletedAt == null)
             IconButton(
-              tooltip: 'Modifier',
+              tooltip: tr('Modifier'),
               icon: const Icon(Icons.edit),
               onPressed: () async {
+                if (!await exigerLicence(context)) return;
+                if (!context.mounted) return;
                 final r = await Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -257,7 +272,7 @@ class _ChequeDetailScreenState extends State<ChequeDetailScreen> {
             ),
           if (c.deletedAt == null && !c.statut.suppressionInterdite)
             IconButton(
-              tooltip: 'Supprimer',
+              tooltip: tr('Supprimer'),
               icon: const Icon(Icons.delete_outline),
               onPressed: _corbeille,
             ),
@@ -279,10 +294,10 @@ class _ChequeDetailScreenState extends State<ChequeDetailScreen> {
                         StatutChip(c.statut),
                         if (retard) ...[
                           const SizedBox(width: 6),
-                          const Chip(
+                          Chip(
                             label: Text(
-                              'En retard',
-                              style: TextStyle(
+                              tr('En retard'),
+                              style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 12,
                               ),
@@ -293,9 +308,9 @@ class _ChequeDetailScreenState extends State<ChequeDetailScreen> {
                         ],
                         const Spacer(),
                         if (c.deletedAt != null)
-                          const Text(
-                            'Dans la corbeille',
-                            style: TextStyle(color: Colors.red),
+                          Text(
+                            tr('Dans la corbeille'),
+                            style: const TextStyle(color: Colors.red),
                           ),
                       ],
                     ),
@@ -311,7 +326,7 @@ class _ChequeDetailScreenState extends State<ChequeDetailScreen> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'À l\'ordre de ${c.beneficiaire}',
+                      tr('À l\'ordre de {0}', [c.beneficiaire]),
                       style: t.titleMedium,
                     ),
                   ],
@@ -320,7 +335,7 @@ class _ChequeDetailScreenState extends State<ChequeDetailScreen> {
             ),
             if (c.statut.suivantsPossibles.isNotEmpty &&
                 c.deletedAt == null) ...[
-              const Section('Changer le statut'),
+              Section(tr('Changer le statut')),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
@@ -330,7 +345,7 @@ class _ChequeDetailScreenState extends State<ChequeDetailScreen> {
                       avatar: Icon(s.icone, color: s.couleur, size: 18),
                       label: Text(
                         c.statut == Statut.impaye && s == Statut.presente
-                            ? 'Représenter'
+                            ? tr('Représenter')
                             : s.libelle,
                       ),
                       onPressed: () => _statut(s),
@@ -338,7 +353,7 @@ class _ChequeDetailScreenState extends State<ChequeDetailScreen> {
                 ],
               ),
             ],
-            const Section('Informations'),
+            Section(tr('Informations')),
             Card(
               child: Padding(
                 padding: const EdgeInsets.symmetric(
@@ -347,48 +362,56 @@ class _ChequeDetailScreenState extends State<ChequeDetailScreen> {
                 ),
                 child: Column(
                   children: [
-                    info('Banque', banque?.nom ?? '?'),
-                    info('Compte', banque?.referenceCompte ?? ''),
+                    info(tr('Banque'), banque?.nom ?? '?'),
+                    info(tr('Compte'), banque?.referenceCompte ?? ''),
                     info(
-                      'Agence',
+                      tr('Agence'),
                       [
                         banque?.agence ?? '',
                         banque?.ville ?? '',
                       ].where((e) => e.isNotEmpty).join(' - '),
                     ),
                     info(
-                      'Chéquier',
-                      ch == null ? '?' : 'N° ${ch.numero} (${ch.plage})',
+                      tr('Chéquier'),
+                      ch == null
+                          ? '?'
+                          : tr('N° {0} ({1})', [ch.numero, ch.plage]),
                     ),
-                    info('Date d\'édition', Fmt.date(c.dateEdition)),
-                    info('Présentation prévue', Fmt.date(c.datePresentation)),
-                    info('Ville', c.ville),
-                    info('Objet', c.objet),
-                    info('Observations', c.observations),
-                    info('Rappels', c.rappelsActifs ? 'Activés' : 'Désactivés'),
+                    info(tr('Date d\'édition'), Fmt.date(c.dateEdition)),
+                    info(
+                      tr('Présentation prévue'),
+                      Fmt.date(c.datePresentation),
+                    ),
+                    info(tr('Ville'), c.ville),
+                    info(tr('Objet'), c.objet),
+                    info(tr('Observations'), c.observations),
+                    info(
+                      tr('Rappels'),
+                      c.rappelsActifs ? tr('Activés') : tr('Désactivés'),
+                    ),
                     if (c.statut == Statut.impaye ||
                         c.motifRejet.isNotEmpty) ...[
-                      info('Motif du rejet', c.motifRejet),
-                      info('Frais de rejet', Fmt.mad(c.fraisRejet)),
+                      info(tr('Motif du rejet'), c.motifRejet),
+                      info(tr('Frais de rejet'), Fmt.mad(c.fraisRejet)),
                     ],
-                    info('Créé le', Fmt.dateHeure(c.createdAt)),
-                    info('Modifié le', Fmt.dateHeure(c.updatedAt)),
+                    info(tr('Créé le'), Fmt.dateHeure(c.createdAt)),
+                    info(tr('Modifié le'), Fmt.dateHeure(c.updatedAt)),
                   ],
                 ),
               ),
             ),
             Section(
-              'Pièces jointes (${_pieces.length})',
+              tr('Pièces jointes ({0})', [_pieces.length]),
               action: c.deletedAt == null
                   ? TextButton.icon(
                       onPressed: _ajouterPiece,
                       icon: const Icon(Icons.add, size: 18),
-                      label: const Text('Ajouter'),
+                      label: Text(tr('Ajouter')),
                     )
                   : null,
             ),
             if (_pieces.isEmpty)
-              Text('Aucune pièce jointe.', style: t.bodySmall)
+              Text(tr('Aucune pièce jointe.'), style: t.bodySmall)
             else
               SizedBox(
                 height: 120,
@@ -449,7 +472,9 @@ class _ChequeDetailScreenState extends State<ChequeDetailScreen> {
               Padding(
                 padding: const EdgeInsets.only(top: 4),
                 child: Text(
-                  'Appui long sur une pièce pour la remplacer ou la retirer.',
+                  tr(
+                    'Appui long sur une pièce pour la remplacer ou la retirer.',
+                  ),
                   style: t.bodySmall,
                 ),
               ),
@@ -457,11 +482,14 @@ class _ChequeDetailScreenState extends State<ChequeDetailScreen> {
               Padding(
                 padding: const EdgeInsets.only(top: 6),
                 child: Text(
-                  '${_piecesRetirees.length} pièce(s) retirée(s) ou remplacée(s), conservée(s) dans les archives.',
+                  tr(
+                    '{0} pièce(s) retirée(s) ou remplacée(s), conservée(s) dans les archives.',
+                    [_piecesRetirees.length],
+                  ),
                   style: t.bodySmall?.copyWith(fontStyle: FontStyle.italic),
                 ),
               ),
-            const Section('Historique des statuts'),
+            Section(tr('Historique des statuts')),
             Card(
               child: Column(
                 children: [
@@ -476,7 +504,7 @@ class _ChequeDetailScreenState extends State<ChequeDetailScreen> {
               ),
             ),
             if (_journal.isNotEmpty) ...[
-              const Section('Journal des modifications'),
+              Section(tr('Journal des modifications')),
               Card(
                 child: Column(
                   children: [
@@ -509,7 +537,7 @@ class _ChequeDetailScreenState extends State<ChequeDetailScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Détail de la modification'),
+        title: Text(tr('Détail de la modification')),
         content: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -539,7 +567,7 @@ class _ChequeDetailScreenState extends State<ChequeDetailScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Fermer'),
+            child: Text(tr('Fermer')),
           ),
         ],
       ),

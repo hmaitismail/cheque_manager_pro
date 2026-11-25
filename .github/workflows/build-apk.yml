@@ -41,16 +41,39 @@ jobs:
           flutter analyze --no-fatal-infos --no-fatal-warnings 2>&1 | tee logs/05_analyze.txt
           flutter test 2>&1 | tee logs/06_test.txt
 
+      - name: Captures d'écran
+        continue-on-error: true
+        run: |
+          flutter test --update-goldens captures/captures_test.dart 2>&1 | tee logs/06b_captures.txt
+          mkdir -p logs/captures && cp captures/png/*.png logs/captures/ || true
+
+      - name: Signature définitive
+        env:
+          SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
+        run: |
+          if [ -z "$SIGNING_PASSWORD" ]; then
+            echo "ATTENTION : secret SIGNING_PASSWORD absent, APK signé avec une clé temporaire" | tee logs/signature.txt
+            exit 0
+          fi
+          openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -in signature/release.jks.enc \
+            -out android/app/release.jks -pass env:SIGNING_PASSWORD
+          printf "storePassword=%s\nkeyPassword=%s\nkeyAlias=chequemanager\nstoreFile=release.jks\n" \
+            "$SIGNING_PASSWORD" "$SIGNING_PASSWORD" > android/key.properties
+          echo "Signature définitive activée" | tee logs/signature.txt
+
       - name: Compiler l'APK
         run: |
           set -o pipefail
-          flutter build apk --release 2>&1 | tee logs/07_build.txt
+          flutter build apk --release --build-number=$((100 + ${{ github.run_number }})) 2>&1 | tee logs/07_build.txt
+          APKSIGNER=$(ls -d $ANDROID_HOME/build-tools/*/ | sort -V | tail -1)apksigner
+          $APKSIGNER verify --print-certs build/app/outputs/flutter-apk/app-release.apk 2>&1 | tee -a logs/signature.txt
 
       - name: Publier l'APK (branche apk)
         run: |
           mkdir out
           cp build/app/outputs/flutter-apk/app-release.apk out/CheckManagerPro.apk
           cp -r logs out/
+          cp -r logs out_logs_tmp 2>/dev/null || true
           cd out
           git init -q -b apk
           git add .

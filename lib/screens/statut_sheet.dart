@@ -8,15 +8,16 @@ import '../services/validation.dart';
 import '../state/app_state.dart';
 import '../widgets/communs.dart';
 import '../widgets/pieces.dart';
+import '../l10n/i18n.dart';
 
-const motifsRejet = [
-  'Provision insuffisante',
-  'Signature non conforme',
-  'Chèque mal rempli',
-  'Compte clôturé',
-  'Opposition',
-  'Date de validité dépassée',
-  'Autre',
+List<String> get motifsRejet => [
+  tr('Provision insuffisante'),
+  tr('Signature non conforme'),
+  tr('Chèque mal rempli'),
+  tr('Compte clôturé'),
+  tr('Opposition'),
+  tr('Date de validité dépassée'),
+  tr('Autre'),
 ];
 
 /// Changement de statut avec commentaire, justificatif et confirmation (§4).
@@ -76,18 +77,19 @@ class _StatutSheetState extends State<_StatutSheet> {
   }
 
   String get _motifFinal =>
-      _motif == 'Autre' ? _motifAutre.text.trim() : (_motif ?? '');
+      _motif == tr('Autre') ? _motifAutre.text.trim() : (_motif ?? '');
 
   String get _messageConfirmation => switch (widget.nouveau) {
-    Statut.paye =>
-      'Confirmez-vous que le débit de ce chèque a bien été constaté sur le compte bancaire ?\n\n'
-          'Un chèque présenté n\'est considéré comme payé qu\'après cette confirmation explicite.',
-    Statut.detruit =>
-      'La destruction est définitive. Le chèque restera conservé dans l\'historique '
-          'mais ne pourra plus changer de statut.\n\nConfirmez-vous la destruction ?',
-    Statut.recupere =>
+    Statut.paye => tr(
+      'Confirmez-vous que le débit de ce chèque a bien été constaté sur le compte bancaire ?\n\nUn chèque présenté n\'est considéré comme payé qu\'après cette confirmation explicite.',
+    ),
+    Statut.detruit => tr(
+      'La destruction est définitive. Le chèque restera conservé dans l\'historique mais ne pourra plus changer de statut.\n\nConfirmez-vous la destruction ?',
+    ),
+    Statut.recupere => tr(
       'Confirmez-vous avoir récupéré physiquement ce chèque auprès du bénéficiaire ?',
-    _ => 'Passer le chèque au statut « ${widget.nouveau.libelle} » ?',
+    ),
+    _ => tr('Passer le chèque au statut « {0} » ?', [widget.nouveau.libelle]),
   };
 
   Future<void> _valider() async {
@@ -96,7 +98,7 @@ class _StatutSheetState extends State<_StatutSheet> {
         ? 0
         : Fmt.parseMontant(_frais.text);
     if (frais == null || frais < 0) {
-      notifier(context, 'Frais invalides', erreur: true);
+      notifier(context, tr('Frais invalides'), erreur: true);
       return;
     }
     final ctrl = Regles.changementStatut(
@@ -113,7 +115,7 @@ class _StatutSheetState extends State<_StatutSheet> {
       context,
       titre: '${c.statut.libelle} → ${widget.nouveau.libelle}',
       message: _messageConfirmation,
-      ok: widget.nouveau == Statut.detruit ? 'Détruire' : 'Confirmer',
+      ok: widget.nouveau == Statut.detruit ? tr('Détruire') : tr('Confirmer'),
       danger: widget.nouveau == Statut.detruit,
     );
     if (!ok || !mounted) return;
@@ -158,7 +160,7 @@ class _StatutSheetState extends State<_StatutSheet> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Passer en « ${n.libelle} »',
+                    tr('Passer en « {0} »', [n.libelle]),
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                 ),
@@ -166,27 +168,28 @@ class _StatutSheetState extends State<_StatutSheet> {
             ),
             const SizedBox(height: 4),
             Text(
-              'Chèque n° ${context.read<AppState>().numero(widget.cheque)} · ${Fmt.mad(widget.cheque.montant)}',
+              tr('Chèque n° {0} · {1}', [
+                context.read<AppState>().numero(widget.cheque),
+                Fmt.mad(widget.cheque.montant),
+              ]),
               style: Theme.of(context).textTheme.bodySmall,
             ),
             const SizedBox(height: 16),
             if (_impaye) ...[
               DropdownButtonFormField<String>(
                 initialValue: _motif,
-                decoration: const InputDecoration(
-                  labelText: 'Motif du rejet *',
-                ),
+                decoration: InputDecoration(labelText: tr('Motif du rejet *')),
                 items: motifsRejet
                     .map((m) => DropdownMenuItem(value: m, child: Text(m)))
                     .toList(),
                 onChanged: (v) => setState(() => _motif = v),
               ),
-              if (_motif == 'Autre') ...[
+              if (_motif == tr('Autre')) ...[
                 const SizedBox(height: 12),
                 TextField(
                   controller: _motifAutre,
-                  decoration: const InputDecoration(
-                    labelText: 'Préciser le motif *',
+                  decoration: InputDecoration(
+                    labelText: tr('Préciser le motif *'),
                   ),
                 ),
               ],
@@ -196,8 +199,8 @@ class _StatutSheetState extends State<_StatutSheet> {
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,
                 ),
-                decoration: const InputDecoration(
-                  labelText: 'Frais de rejet',
+                decoration: InputDecoration(
+                  labelText: tr('Frais de rejet'),
                   suffixText: 'MAD',
                 ),
               ),
@@ -208,8 +211,12 @@ class _StatutSheetState extends State<_StatutSheet> {
                 icon: const Icon(Icons.event_repeat),
                 label: Text(
                   _nouvelleDate == null
-                      ? 'Nouvelle date de présentation${_represente ? ' *' : ' (facultatif)'}'
-                      : 'Nouvelle présentation : ${Fmt.date(_nouvelleDate)}',
+                      ? tr('Nouvelle date de présentation{0}', [
+                          _represente ? ' *' : tr(' (facultatif)'),
+                        ])
+                      : tr('Nouvelle présentation : {0}', [
+                          Fmt.date(_nouvelleDate),
+                        ]),
                 ),
                 onPressed: () async {
                   final d = await choisirDate(
@@ -225,8 +232,8 @@ class _StatutSheetState extends State<_StatutSheet> {
               controller: _commentaire,
               maxLines: 2,
               textCapitalization: TextCapitalization.sentences,
-              decoration: const InputDecoration(
-                labelText: 'Commentaire',
+              decoration: InputDecoration(
+                labelText: tr('Commentaire'),
                 alignLabelWithHint: true,
               ),
             ),
@@ -238,12 +245,15 @@ class _StatutSheetState extends State<_StatutSheet> {
               ),
               label: Text(
                 _justif == null
-                    ? 'Joindre un justificatif (facultatif)'
+                    ? tr('Joindre un justificatif (facultatif)')
                     : _justif!.nom,
                 overflow: TextOverflow.ellipsis,
               ),
               onPressed: () async {
-                final f = await choisirPiece(context, titre: 'Justificatif');
+                final f = await choisirPiece(
+                  context,
+                  titre: tr('Justificatif'),
+                );
                 if (f != null) setState(() => _justif = f);
               },
             ),
@@ -253,7 +263,7 @@ class _StatutSheetState extends State<_StatutSheet> {
                   ? FilledButton.styleFrom(backgroundColor: n.couleur)
                   : null,
               onPressed: _enCours ? null : _valider,
-              child: Text('Valider : ${n.libelle}'),
+              child: Text(tr('Valider : {0}', [n.libelle])),
             ),
           ],
         ),

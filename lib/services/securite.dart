@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:crypto/crypto.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:local_auth/local_auth.dart';
+import '../l10n/i18n.dart';
 
 /// Authentification locale : code PIN (haché + salé, stocké dans le
 /// Keystore / Keychain) et biométrie (empreinte, Face ID).
@@ -94,7 +95,7 @@ class ServiceSecurite {
   Future<bool> authentifierBiometrie() async {
     try {
       return await _auth.authenticate(
-        localizedReason: 'Déverrouiller Cheque Manager Pro',
+        localizedReason: tr('Déverrouiller Cheque Manager Pro'),
         biometricOnly: true,
         persistAcrossBackgrounding: true,
       );

@@ -8,6 +8,7 @@ import 'package:uuid/uuid.dart';
 import '../core/format.dart';
 import '../models/models.dart';
 import 'database.dart';
+import '../l10n/i18n.dart';
 
 class RegleException implements Exception {
   final String message;
@@ -78,7 +79,7 @@ class Repository {
 
   Future<void> enregistrerBanque(Banque b, {required bool nouveau}) async {
     if (b.nom.trim().isEmpty) {
-      throw RegleException('Le nom de la banque est obligatoire.');
+      throw RegleException(tr('Le nom de la banque est obligatoire.'));
     }
     b.updatedAt = DateTime.now();
     await _db.transaction((tx) async {
@@ -97,8 +98,10 @@ class Repository {
         entite: 'banque',
         entiteId: b.id,
         action: nouveau ? 'creation' : 'modification',
-        resume:
-            '${nouveau ? 'Création' : 'Modification'} du compte ${b.libelle}',
+        resume: tr('{0} du compte {1}', [
+          nouveau ? tr('Création') : tr('Modification'),
+          b.libelle,
+        ]),
       );
     });
   }
@@ -147,9 +150,12 @@ class Repository {
         entite: 'chequier',
         entiteId: c.id,
         action: nouveau ? 'creation' : 'modification',
-        resume:
-            '${nouveau ? 'Création' : 'Modification'} du chéquier n° ${c.numero} '
-            '(${c.plage}, statut ${c.statut.libelle})',
+        resume: tr('{0} du chéquier n° {1} ({2}, statut {3})', [
+          nouveau ? tr('Création') : tr('Modification'),
+          c.numero,
+          c.plage,
+          c.statut.libelle,
+        ]),
       );
     });
   }
@@ -192,8 +198,11 @@ class Repository {
         entite: 'chequier',
         entiteId: chequierId,
         action: 'statut',
-        resume:
-            'Chéquier n° ${ch.numero} : ${ch.statut.libelle} → ${nouveau.libelle} (automatique)',
+        resume: tr('Chéquier n° {0} : {1} → {2} (automatique)', [
+          ch.numero,
+          ch.statut.libelle,
+          nouveau.libelle,
+        ]),
       );
     }
   }
@@ -232,18 +241,18 @@ class Repository {
     return rows.isEmpty ? null : Cheque.fromMap(rows.first);
   }
 
-  static const libellesChamps = {
-    'banque_id': 'Banque',
-    'chequier_id': 'Chéquier',
-    'numero': 'Numéro',
-    'montant': 'Montant',
-    'date_edition': 'Date d\'édition',
-    'date_presentation': 'Date de présentation',
-    'beneficiaire': 'Bénéficiaire',
-    'ville': 'Ville',
-    'objet': 'Objet',
-    'observations': 'Observations',
-    'rappels_actifs': 'Rappels',
+  static Map<String, String> get libellesChamps => {
+    'banque_id': tr('Banque'),
+    'chequier_id': tr('Chéquier'),
+    'numero': tr('Numéro'),
+    'montant': tr('Montant'),
+    'date_edition': tr('Date d\'édition'),
+    'date_presentation': tr('Date de présentation'),
+    'beneficiaire': tr('Bénéficiaire'),
+    'ville': tr('Ville'),
+    'objet': tr('Objet'),
+    'observations': tr('Observations'),
+    'rappels_actifs': tr('Rappels'),
   };
 
   Future<void> enregistrerCheque(Cheque c, {required bool nouveau}) async {
@@ -260,7 +269,7 @@ class Repository {
             ancien: null,
             nouveau: c.statut,
             date: now,
-            commentaire: 'Enregistrement du chèque',
+            commentaire: tr('Enregistrement du chèque'),
           ).toMap(),
         );
         await _log(
@@ -268,8 +277,11 @@ class Repository {
           entite: 'cheque',
           entiteId: c.id,
           action: 'creation',
-          resume:
-              'Chèque n° ${c.numero} créé : ${Fmt.mad(c.montant)} à l\'ordre de ${c.beneficiaire}',
+          resume: tr('Chèque n° {0} créé : {1} à l\'ordre de {2}', [
+            c.numero,
+            Fmt.mad(c.montant),
+            c.beneficiaire,
+          ]),
         );
         await _majStatutChequier(tx, c.chequierId);
       } else {
@@ -278,7 +290,7 @@ class Repository {
           where: 'id = ?',
           whereArgs: [c.id],
         );
-        if (rows.isEmpty) throw RegleException('Chèque introuvable.');
+        if (rows.isEmpty) throw RegleException(tr('Chèque introuvable.'));
         final ancien = Cheque.fromMap(rows.first);
         if (ancien.statut.estCloture) {
           // Un chèque clôturé reste modifiable uniquement sur les champs
@@ -288,8 +300,10 @@ class Repository {
               ancien.banqueId != c.banqueId ||
               ancien.chequierId != c.chequierId) {
             throw RegleException(
-              'Un chèque ${ancien.statut.libelle.toLowerCase()} ne peut plus changer de montant, '
-              'de numéro ni de compte.',
+              tr(
+                'Un chèque {0} ne peut plus changer de montant, de numéro ni de compte.',
+                [ancien.statut.libelle.toLowerCase()],
+              ),
             );
           }
         }
@@ -316,7 +330,7 @@ class Repository {
             entite: 'cheque',
             entiteId: c.id,
             action: 'modification',
-            resume: 'Chèque n° ${c.numero} modifié : $champs',
+            resume: tr('Chèque n° {0} modifié : {1}', [c.numero, champs]),
             details: diff,
           );
         }
@@ -340,7 +354,10 @@ class Repository {
   }) async {
     if (!c.statut.peutPasserA(nouveau)) {
       throw RegleException(
-        'Passage de "${c.statut.libelle}" à "${nouveau.libelle}" non autorisé.',
+        tr('Passage de "{0}" à "{1}" non autorisé.', [
+          c.statut.libelle,
+          nouveau.libelle,
+        ]),
       );
     }
     final now = DateTime.now();
@@ -372,11 +389,13 @@ class Repository {
       await tx.update('cheques', maj, where: 'id = ?', whereArgs: [c.id]);
       final detailsCommentaire = [
         if (commentaire.trim().isNotEmpty) commentaire.trim(),
-        if (nouveau == Statut.impaye) 'Motif : $motifRejet',
+        if (nouveau == Statut.impaye) tr('Motif : {0}', [motifRejet]),
         if (nouveau == Statut.impaye && fraisRejet > 0)
-          'Frais : ${Fmt.mad(fraisRejet)}',
+          tr('Frais : {0}', [Fmt.mad(fraisRejet)]),
         if (nouvelleDatePresentation != null)
-          'Nouvelle présentation : ${Fmt.date(nouvelleDatePresentation)}',
+          tr('Nouvelle présentation : {0}', [
+            Fmt.date(nouvelleDatePresentation),
+          ]),
       ].join(' | ');
       await tx.insert(
         'historique_statuts',
@@ -395,9 +414,12 @@ class Repository {
         entite: 'cheque',
         entiteId: c.id,
         action: 'statut',
-        resume:
-            'Chèque n° ${c.numero} : ${ancien.libelle} → ${nouveau.libelle}'
-            '${detailsCommentaire.isEmpty ? '' : ' ($detailsCommentaire)'}',
+        resume: tr('Chèque n° {0} : {1} → {2}{3}', [
+          c.numero,
+          ancien.libelle,
+          nouveau.libelle,
+          detailsCommentaire.isEmpty ? '' : ' ($detailsCommentaire)',
+        ]),
       );
     });
   }
@@ -416,8 +438,10 @@ class Repository {
   Future<void> mettreALaCorbeille(Cheque c, String motif) async {
     if (c.statut.suppressionInterdite) {
       throw RegleException(
-        'Un chèque ${c.statut.libelle.toLowerCase()} ne peut pas être supprimé. '
-        'Il reste conservé dans l\'historique.',
+        tr(
+          'Un chèque {0} ne peut pas être supprimé. Il reste conservé dans l\'historique.',
+          [c.statut.libelle.toLowerCase()],
+        ),
       );
     }
     await _db.transaction((tx) async {
@@ -433,8 +457,11 @@ class Repository {
         entite: 'cheque',
         entiteId: c.id,
         action: 'suppression',
-        resume:
-            'Chèque n° ${c.numero} (${Fmt.mad(c.montant)}) mis à la corbeille. Motif : $motif',
+        resume: tr('Chèque n° {0} ({1}) mis à la corbeille. Motif : {2}', [
+          c.numero,
+          Fmt.mad(c.montant),
+          motif,
+        ]),
       );
     });
   }
@@ -452,7 +479,7 @@ class Repository {
         entite: 'cheque',
         entiteId: c.id,
         action: 'restauration',
-        resume: 'Chèque n° ${c.numero} restauré depuis la corbeille',
+        resume: tr('Chèque n° {0} restauré depuis la corbeille', [c.numero]),
       );
     });
   }
@@ -461,10 +488,14 @@ class Repository {
   /// un chèque jamais présenté. Une trace complète reste dans le journal.
   Future<void> supprimerDefinitivement(Cheque c) async {
     if (c.deletedAt == null) {
-      throw RegleException('Le chèque doit d\'abord être dans la corbeille.');
+      throw RegleException(
+        tr('Le chèque doit d\'abord être dans la corbeille.'),
+      );
     }
     if (c.statut.suppressionInterdite) {
-      throw RegleException('Suppression définitive interdite pour ce statut.');
+      throw RegleException(
+        tr('Suppression définitive interdite pour ce statut.'),
+      );
     }
     final pieces = await piecesJointes(c.id, avecSupprimees: true);
     await _db.transaction((tx) async {
@@ -484,7 +515,7 @@ class Repository {
         entite: 'cheque',
         entiteId: c.id,
         action: 'suppression_definitive',
-        resume: 'Chèque n° ${c.numero} supprimé définitivement',
+        resume: tr('Chèque n° {0} supprimé définitivement', [c.numero]),
         details: c.toMap(),
       );
       await _majStatutChequier(tx, c.chequierId);
@@ -569,8 +600,8 @@ class Repository {
         entiteId: chequeId,
         action: remplace == null ? 'ajout' : 'remplacement',
         resume: remplace == null
-            ? 'Pièce jointe ajoutée : ${pj.nom}'
-            : 'Pièce jointe remplacée : ${remplace.nom} → ${pj.nom}',
+            ? tr('Pièce jointe ajoutée : {0}', [pj.nom])
+            : tr('Pièce jointe remplacée : {0} → {1}', [remplace.nom, pj.nom]),
       );
     });
   }
@@ -589,7 +620,7 @@ class Repository {
         entite: 'piece',
         entiteId: pj.chequeId,
         action: 'suppression',
-        resume: 'Pièce jointe retirée : ${pj.nom}',
+        resume: tr('Pièce jointe retirée : {0}', [pj.nom]),
       );
     });
   }

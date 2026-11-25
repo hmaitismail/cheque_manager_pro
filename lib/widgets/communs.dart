@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../core/format.dart';
 import '../models/models.dart';
 import '../state/app_state.dart';
+import '../l10n/i18n.dart';
 
 class StatutChip extends StatelessWidget {
   const StatutChip(this.statut, {super.key, this.petit = false});
@@ -153,8 +154,12 @@ class ChequeTile extends StatelessWidget {
         style: const TextStyle(fontWeight: FontWeight.w600),
       ),
       subtitle: Text(
-        'N° ${app.numero(cheque)} · ${app.nomBanque(cheque.banqueId)}\n'
-        '${retard ? 'EN RETARD · ' : ''}Présentation ${Fmt.date(cheque.datePresentation)}',
+        tr('N° {0} · {1}\n{2}Présentation {3}', [
+          app.numero(cheque),
+          app.nomBanque(cheque.banqueId),
+          retard ? 'EN RETARD · ' : '',
+          Fmt.date(cheque.datePresentation),
+        ]),
         maxLines: 2,
         style: t.bodySmall?.copyWith(color: retard ? Colors.red : null),
       ),
@@ -236,7 +241,7 @@ Future<bool> confirmer(
   BuildContext context, {
   required String titre,
   required String message,
-  String ok = 'Confirmer',
+  String? ok,
   bool danger = false,
 }) async {
   final r = await showDialog<bool>(
@@ -247,14 +252,14 @@ Future<bool> confirmer(
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(ctx, false),
-          child: const Text('Annuler'),
+          child: Text(tr('Annuler')),
         ),
         FilledButton(
           style: danger
               ? FilledButton.styleFrom(backgroundColor: Colors.red.shade700)
               : null,
           onPressed: () => Navigator.pop(ctx, true),
-          child: Text(ok),
+          child: Text(ok ?? tr('Confirmer')),
         ),
       ],
     ),
@@ -280,5 +285,5 @@ Future<DateTime?> choisirDate(BuildContext context, DateTime initiale) =>
       initialDate: initiale,
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
-      locale: const Locale('fr', 'FR'),
+      locale: I18n.langue.locale,
     );

@@ -1,7 +1,7 @@
 name: cheque_manager_pro
 description: "Cheque Manager Pro - Gestion, suivi et contrôle des chèques émis."
 publish_to: 'none'
-version: 1.0.0+1
+version: 1.1.0+2
 
 environment:
   sdk: ">=3.9.0 <4.0.0"
@@ -23,6 +23,7 @@ dependencies:
   # Utilitaires
   uuid: ^4.5.1
   crypto: ^3.0.6
+  cryptography: ^2.9.0
 
   # Notifications locales (fonctionnent application fermée)
   flutter_local_notifications: ^23.0.3
@@ -53,3 +54,5 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/fonts/

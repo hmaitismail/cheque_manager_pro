@@ -1,3 +1,4 @@
+import '../l10n/i18n.dart';
 import '../core/format.dart';
 import 'models.dart';
 
@@ -10,8 +11,9 @@ enum Tri {
   numero('Numéro de chèque'),
   banque('Banque');
 
-  const Tri(this.libelle);
-  final String libelle;
+  const Tri(this._libelle);
+  final String _libelle;
+  String get libelle => tr(_libelle);
 }
 
 /// Critères de recherche (cahier des charges §7).

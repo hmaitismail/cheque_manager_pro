@@ -1,45 +1,119 @@
+import '../l10n/i18n.dart';
+
 /// Formatage des montants (MAD) et des dates, sans dépendance aux données
 /// de locale (évite les espaces insécables spéciaux, mal gérés en PDF).
 class Fmt {
   Fmt._();
 
-  static const moisCourts = [
-    'janv.',
-    'févr.',
-    'mars',
-    'avr.',
-    'mai',
-    'juin',
-    'juil.',
-    'août',
-    'sept.',
-    'oct.',
-    'nov.',
-    'déc.',
-  ];
-  static const moisLongs = [
-    'janvier',
-    'février',
-    'mars',
-    'avril',
-    'mai',
-    'juin',
-    'juillet',
-    'août',
-    'septembre',
-    'octobre',
-    'novembre',
-    'décembre',
-  ];
-  static const joursCourts = [
-    'lun.',
-    'mar.',
-    'mer.',
-    'jeu.',
-    'ven.',
-    'sam.',
-    'dim.',
-  ];
+  static const _moisCourts = {
+    Langue.fr: [
+      'janv.',
+      'févr.',
+      'mars',
+      'avr.',
+      'mai',
+      'juin',
+      'juil.',
+      'août',
+      'sept.',
+      'oct.',
+      'nov.',
+      'déc.',
+    ],
+    Langue.en: [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ],
+    Langue.ar: [
+      'يناير',
+      'فبراير',
+      'مارس',
+      'أبريل',
+      'ماي',
+      'يونيو',
+      'يوليوز',
+      'غشت',
+      'شتنبر',
+      'أكتوبر',
+      'نونبر',
+      'دجنبر',
+    ],
+  };
+  static const _moisLongs = {
+    Langue.fr: [
+      'janvier',
+      'février',
+      'mars',
+      'avril',
+      'mai',
+      'juin',
+      'juillet',
+      'août',
+      'septembre',
+      'octobre',
+      'novembre',
+      'décembre',
+    ],
+    Langue.en: [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ],
+    Langue.ar: [
+      'يناير',
+      'فبراير',
+      'مارس',
+      'أبريل',
+      'ماي',
+      'يونيو',
+      'يوليوز',
+      'غشت',
+      'شتنبر',
+      'أكتوبر',
+      'نونبر',
+      'دجنبر',
+    ],
+  };
+  static const _jours = {
+    Langue.fr: ['lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.', 'dim.'],
+    Langue.en: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+    Langue.ar: [
+      'الإثنين',
+      'الثلاثاء',
+      'الأربعاء',
+      'الخميس',
+      'الجمعة',
+      'السبت',
+      'الأحد',
+    ],
+  };
+  static List<String> get moisCourts => _moisCourts[I18n.langue]!;
+  static List<String> get moisLongs => _moisLongs[I18n.langue]!;
+  static List<String> get joursCourts => _jours[I18n.langue]!;
+  static List<String> get joursInitiales => switch (I18n.langue) {
+    Langue.fr => const ['L', 'M', 'M', 'J', 'V', 'S', 'D'],
+    Langue.en => const ['M', 'T', 'W', 'T', 'F', 'S', 'S'],
+    Langue.ar => const ['ن', 'ث', 'ر', 'خ', 'ج', 'س', 'ح'],
+  };
 
   /// Montant en centimes -> "15 000,00 MAD"
   static String mad(int centimes, {bool devise = true}) {

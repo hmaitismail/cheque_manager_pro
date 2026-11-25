@@ -1,9 +1,11 @@
 // Tests des règles de gestion, des calculs et de la recherche.
 // Lancer avec : flutter test
 import 'package:cheque_manager_pro/core/format.dart';
+import 'package:cheque_manager_pro/l10n/i18n.dart';
 import 'package:cheque_manager_pro/models/filtre.dart';
 import 'package:cheque_manager_pro/models/models.dart';
 import 'package:cheque_manager_pro/services/plan_rappels.dart';
+import 'package:cheque_manager_pro/services/licence_cle.dart';
 import 'package:cheque_manager_pro/services/stats.dart';
 import 'package:cheque_manager_pro/services/validation.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -423,6 +425,42 @@ void main() {
         ),
         hasLength(60),
       );
+    });
+  });
+
+  group('Langues', () {
+    test('français par défaut, anglais et arabe traduits avec valeurs', () {
+      I18n.langue = Langue.fr;
+      expect(
+        tr('Chèque n° {0} enregistré', ['125']),
+        'Chèque n° 125 enregistré',
+      );
+      I18n.langue = Langue.en;
+      expect(tr('Chèque n° {0} enregistré', ['125']), 'Cheque no. 125 saved');
+      expect(Statut.paye.libelle, 'Paid');
+      I18n.langue = Langue.ar;
+      expect(tr('Chèque n° {0} enregistré', ['125']), 'تم حفظ الشيك رقم 125');
+      expect(Langue.ar.rtl, isTrue);
+      I18n.langue = Langue.fr;
+    });
+  });
+
+  group('Licence', () {
+    const pub = 'kq5CDuR6fVseS6VlacU8fx0lPjYgfxXZcNB4CjRL/AY=';
+    // Clé de test générée par outils/generer_licence.py pour l'appareil fictif K7Q2-M9XD.
+    const cle =
+        'AFHX5B-R8WNBM-LAL2TW-53UCVN-DH8JSR-PT9BYY-Z769N3-X47EA7-D2ZF8C-UM3CHB-N5GL9R-9UARME-8KNFAG-45J49K-MCQ49C-QDHECE-KDXLED-BWUNCG-8DQ6CH-WAQ';
+    test('clé du vendeur acceptée, liée à l\'appareil', () async {
+      final c = await decoderCle(cle, pub);
+      expect(c, isNotNull);
+      expect(c!.codeAppareil, 'K7Q2M9XD');
+      expect(c.formule, Formule.annuelle);
+      expect(c.expiration, DateTime.utc(2027, 11, 25));
+    });
+    test('clé modifiée refusée', () async {
+      final fausse = cle.replaceRange(10, 11, cle[10] == 'A' ? 'B' : 'A');
+      expect(await decoderCle(fausse, pub), isNull);
+      expect(await decoderCle('ABCDEF', pub), isNull);
     });
   });
 }

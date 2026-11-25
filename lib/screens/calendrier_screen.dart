@@ -8,6 +8,7 @@ import '../state/app_state.dart';
 import '../widgets/communs.dart';
 import 'cheque_detail_screen.dart';
 import 'parametres_screen.dart';
+import '../l10n/i18n.dart';
 
 /// Calendrier des présentations et rappels programmés (§5).
 class CalendrierScreen extends StatefulWidget {
@@ -37,10 +38,10 @@ class _CalendrierScreenState extends State<CalendrierScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Calendrier et rappels'),
+        title: Text(tr('Calendrier et rappels')),
         actions: [
           IconButton(
-            tooltip: 'Réglages des rappels',
+            tooltip: tr('Réglages des rappels'),
             icon: const Icon(Icons.notifications_active_outlined),
             onPressed: () => Navigator.push(
               context,
@@ -94,10 +95,12 @@ class _CalendrierScreenState extends State<CalendrierScreen> {
               ),
             ),
           ),
-          Section('${Fmt.dateLongue(_jour)} · ${duJour.length} chèque(s)'),
+          Section(
+            tr('{0} · {1} chèque(s)', [Fmt.dateLongue(_jour), duJour.length]),
+          ),
           if (duJour.isEmpty)
             Text(
-              'Aucune présentation prévue ce jour.',
+              tr('Aucune présentation prévue ce jour.'),
               style: Theme.of(context).textTheme.bodySmall,
             )
           else
@@ -117,17 +120,17 @@ class _CalendrierScreenState extends State<CalendrierScreen> {
                 ],
               ),
             ),
-          Section('Prochains rappels programmés (${plan.length})'),
+          Section(tr('Prochains rappels programmés ({0})', [plan.length])),
           if (!app.reglages.actifs)
-            const Card(
+            Card(
               child: ListTile(
-                leading: Icon(Icons.notifications_off),
-                title: Text('Rappels désactivés'),
+                leading: const Icon(Icons.notifications_off),
+                title: Text(tr('Rappels désactivés')),
               ),
             )
           else if (plan.isEmpty)
             Text(
-              'Aucun rappel à venir.',
+              tr('Aucun rappel à venir.'),
               style: Theme.of(context).textTheme.bodySmall,
             )
           else
@@ -185,7 +188,7 @@ class _Grille extends StatelessWidget {
     final aujourdhui = Fmt.jour(DateTime.now());
     final scheme = Theme.of(context).colorScheme;
     final cases = <Widget>[
-      for (final j in const ['L', 'M', 'M', 'J', 'V', 'S', 'D'])
+      for (final j in Fmt.joursInitiales)
         Center(
           child: Text(
             j,

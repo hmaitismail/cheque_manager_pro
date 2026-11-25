@@ -5,6 +5,8 @@ import '../core/format.dart';
 import '../services/rapports.dart';
 import '../state/app_state.dart';
 import '../widgets/communs.dart';
+import 'licence_screen.dart';
+import '../l10n/i18n.dart';
 
 /// Rapports et exportations PDF / Excel / CSV (§8).
 class RapportsScreen extends StatefulWidget {
@@ -22,6 +24,8 @@ class _RapportsScreenState extends State<RapportsScreen> {
   Future<void> _executer(
     Future<void> Function(ServiceRapports s, Rapport r) action,
   ) async {
+    if (!await exigerLicence(context)) return;
+    if (!mounted) return;
     final app = context.read<AppState>();
     setState(() => _enCours = true);
     try {
@@ -30,11 +34,15 @@ class _RapportsScreenState extends State<RapportsScreen> {
       await action(s, r);
       await app.repo.logSysteme(
         'export',
-        'Rapport généré : ${r.titre} (${r.periode})',
+        tr('Rapport généré : {0} ({1})', [r.titre, r.periode]),
       );
     } catch (e) {
       if (mounted) {
-        notifier(context, 'Erreur lors de la génération : $e', erreur: true);
+        notifier(
+          context,
+          tr('Erreur lors de la génération : {0}', [e]),
+          erreur: true,
+        );
       }
     } finally {
       if (mounted) setState(() => _enCours = false);
@@ -73,11 +81,11 @@ class _RapportsScreenState extends State<RapportsScreen> {
     final t = Theme.of(context).textTheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Rapports')),
+      appBar: AppBar(title: Text(tr('Rapports'))),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(14, 6, 14, 40),
         children: [
-          const Section('Type de rapport'),
+          Section(tr('Type de rapport')),
           Card(
             child: RadioGroup<TypeRapport>(
               groupValue: _type,
@@ -94,25 +102,25 @@ class _RapportsScreenState extends State<RapportsScreen> {
               ),
             ),
           ),
-          const Section('Période (date d\'édition)'),
+          Section(tr('Période (date d\'édition)')),
           Wrap(
             spacing: 8,
             runSpacing: 8,
             children: [
               ActionChip(
-                label: const Text('Tout'),
+                label: Text(tr('Tout')),
                 onPressed: () => _periodeRapide('tout'),
               ),
               ActionChip(
-                label: const Text('Ce mois'),
+                label: Text(tr('Ce mois')),
                 onPressed: () => _periodeRapide('mois'),
               ),
               ActionChip(
-                label: const Text('Mois précédent'),
+                label: Text(tr('Mois précédent')),
                 onPressed: () => _periodeRapide('mois_prec'),
               ),
               ActionChip(
-                label: const Text('Cette année'),
+                label: Text(tr('Cette année')),
                 onPressed: () => _periodeRapide('annee'),
               ),
             ],
@@ -123,7 +131,7 @@ class _RapportsScreenState extends State<RapportsScreen> {
               Expanded(
                 child: OutlinedButton.icon(
                   icon: const Icon(Icons.date_range, size: 18),
-                  label: Text(_du == null ? 'Du...' : Fmt.date(_du)),
+                  label: Text(_du == null ? tr('Du...') : Fmt.date(_du)),
                   onPressed: () async {
                     final d = await choisirDate(context, _du ?? DateTime.now());
                     if (d != null) setState(() => _du = d);
@@ -134,7 +142,7 @@ class _RapportsScreenState extends State<RapportsScreen> {
               Expanded(
                 child: OutlinedButton.icon(
                   icon: const Icon(Icons.date_range, size: 18),
-                  label: Text(_au == null ? 'Au...' : Fmt.date(_au)),
+                  label: Text(_au == null ? tr('Au...') : Fmt.date(_au)),
                   onPressed: () async {
                     final d = await choisirDate(context, _au ?? DateTime.now());
                     if (d != null) setState(() => _au = d);
@@ -143,7 +151,7 @@ class _RapportsScreenState extends State<RapportsScreen> {
               ),
             ],
           ),
-          const Section('Aperçu'),
+          Section(tr('Aperçu')),
           Card(
             child: Padding(
               padding: const EdgeInsets.all(14),
@@ -156,9 +164,9 @@ class _RapportsScreenState extends State<RapportsScreen> {
                   ),
                   Text(apercu.periode, style: t.bodySmall),
                   const SizedBox(height: 8),
-                  Text('${apercu.lignes.length} ligne(s)'),
+                  Text(tr('{0} ligne(s)', [apercu.lignes.length])),
                   Text(
-                    'Total : ${Fmt.mad(apercu.totalGeneral)}',
+                    tr('Total : {0}', [Fmt.mad(apercu.totalGeneral)]),
                     style: const TextStyle(fontWeight: FontWeight.w700),
                   ),
                 ],
@@ -173,7 +181,7 @@ class _RapportsScreenState extends State<RapportsScreen> {
                 ? null
                 : () => _executer((s, r) => s.imprimer(r)),
             icon: const Icon(Icons.print),
-            label: const Text('Aperçu et impression PDF'),
+            label: Text(tr('Aperçu et impression PDF')),
           ),
           const SizedBox(height: 10),
           Row(
@@ -186,7 +194,7 @@ class _RapportsScreenState extends State<RapportsScreen> {
                           (s, r) => s.partager(r, FormatExport.pdf),
                         ),
                   icon: const Icon(Icons.picture_as_pdf),
-                  label: const Text('PDF'),
+                  label: Text(tr('PDF')),
                 ),
               ),
               const SizedBox(width: 8),
@@ -198,7 +206,7 @@ class _RapportsScreenState extends State<RapportsScreen> {
                           (s, r) => s.partager(r, FormatExport.xlsx),
                         ),
                   icon: const Icon(Icons.table_chart),
-                  label: const Text('Excel'),
+                  label: Text(tr('Excel')),
                 ),
               ),
               const SizedBox(width: 8),
@@ -210,14 +218,16 @@ class _RapportsScreenState extends State<RapportsScreen> {
                           (s, r) => s.partager(r, FormatExport.csv),
                         ),
                   icon: const Icon(Icons.description),
-                  label: const Text('CSV'),
+                  label: Text(tr('CSV')),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 8),
           Text(
-            'Les fichiers sont proposés au partage (e-mail, WhatsApp, Drive, enregistrement...).',
+            tr(
+              'Les fichiers sont proposés au partage (e-mail, WhatsApp, Drive, enregistrement...).',
+            ),
             style: t.bodySmall,
           ),
         ],

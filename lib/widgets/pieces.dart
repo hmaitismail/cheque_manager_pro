@@ -2,6 +2,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as p;
+import '../l10n/i18n.dart';
 
 class FichierChoisi {
   final String chemin;
@@ -13,7 +14,7 @@ class FichierChoisi {
 /// Propose : appareil photo, galerie ou document PDF.
 Future<FichierChoisi?> choisirPiece(
   BuildContext context, {
-  String titre = 'Ajouter une pièce jointe',
+  String? titre,
 }) async {
   final source = await showModalBottomSheet<String>(
     context: context,
@@ -23,21 +24,24 @@ Future<FichierChoisi?> choisirPiece(
       children: [
         Padding(
           padding: const EdgeInsets.all(16),
-          child: Text(titre, style: Theme.of(ctx).textTheme.titleMedium),
+          child: Text(
+            titre ?? tr('Ajouter une pièce jointe'),
+            style: Theme.of(ctx).textTheme.titleMedium,
+          ),
         ),
         ListTile(
           leading: const Icon(Icons.photo_camera),
-          title: const Text('Photographier le chèque'),
+          title: Text(tr('Photographier le chèque')),
           onTap: () => Navigator.pop(ctx, 'camera'),
         ),
         ListTile(
           leading: const Icon(Icons.photo_library),
-          title: const Text('Importer depuis la galerie'),
+          title: Text(tr('Importer depuis la galerie')),
           onTap: () => Navigator.pop(ctx, 'galerie'),
         ),
         ListTile(
           leading: const Icon(Icons.picture_as_pdf),
-          title: const Text('Joindre un document PDF'),
+          title: Text(tr('Joindre un document PDF')),
           onTap: () => Navigator.pop(ctx, 'pdf'),
         ),
         const SizedBox(height: 12),
@@ -61,13 +65,15 @@ Future<FichierChoisi?> choisirPiece(
     );
     if (img == null) return null;
     final nom = source == 'camera'
-        ? 'Photo du ${DateTime.now().toString().substring(0, 16)}'
+        ? tr('Photo du {0}', [DateTime.now().toString().substring(0, 16)])
         : p.basename(img.path);
     return FichierChoisi(img.path, nom);
   } catch (e) {
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Impossible d\'accéder au fichier : $e')),
+        SnackBar(
+          content: Text(tr('Impossible d\'accéder au fichier : {0}', [e])),
+        ),
       );
     }
     return null;

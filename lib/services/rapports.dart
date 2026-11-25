@@ -1,9 +1,11 @@
+import '../l10n/i18n.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
@@ -24,8 +26,9 @@ enum TypeRapport {
   parPeriode('Situation par période (mensuelle)'),
   journal('Journal complet des chèques');
 
-  const TypeRapport(this.titre);
-  final String titre;
+  const TypeRapport(this._titre);
+  final String _titre;
+  String get titre => tr(_titre);
 
   Statut? get statut => switch (this) {
     enAttente => Statut.enAttente,
@@ -96,8 +99,11 @@ class ServiceRapports {
       return true;
     }).toList();
     final periode = (du == null && au == null)
-        ? 'Toutes périodes'
-        : 'Du ${du == null ? '...' : Fmt.date(du)} au ${au == null ? '...' : Fmt.date(au)}';
+        ? tr('Toutes périodes')
+        : tr('Du {0} au {1}', [
+            du == null ? '...' : Fmt.date(du),
+            au == null ? '...' : Fmt.date(au),
+          ]);
 
     if (type == TypeRapport.parBanque) return _parBanque(filtres, periode);
     if (type == TypeRapport.parPeriode) {
@@ -114,17 +120,17 @@ class ServiceRapports {
     });
     final avecRejet = st == Statut.impaye;
     final colonnes = [
-      'N° chèque',
-      'Banque',
-      'Bénéficiaire',
-      'Édition',
-      'Présentation',
-      'Ville',
-      'Objet',
-      if (st == null) 'Statut',
-      if (avecRejet) 'Motif rejet',
-      if (avecRejet) 'Frais',
-      'Montant (MAD)',
+      tr('N° chèque'),
+      tr('Banque'),
+      tr('Bénéficiaire'),
+      tr('Édition'),
+      tr('Présentation'),
+      tr('Ville'),
+      tr('Objet'),
+      if (st == null) tr('Statut'),
+      if (avecRejet) tr('Motif rejet'),
+      if (avecRejet) tr('Frais'),
+      tr('Montant (MAD)'),
     ];
     final lignes = liste
         .map(
@@ -146,7 +152,7 @@ class ServiceRapports {
     final total = liste.fold<int>(0, (s, c) => s + c.montant);
     final frais = liste.fold<int>(0, (s, c) => s + c.fraisRejet);
     final totaux = [
-      Cellule.t('TOTAL (${liste.length} chèque${liste.length > 1 ? 's' : ''})'),
+      Cellule.t(tr('TOTAL ({0} chèque(s))', [liste.length])),
       for (var i = 1; i < colonnes.length - (avecRejet ? 2 : 1); i++)
         const Cellule.t(''),
       if (avecRejet) Cellule.m(frais),
@@ -169,14 +175,14 @@ class ServiceRapports {
 
   Rapport _parBanque(List<Cheque> liste, String periode) {
     final colonnes = [
-      'Banque / compte',
-      'Nb',
-      'Émis',
-      'En attente',
-      'Présentés',
-      'Payés',
-      'Impayés',
-      'Récup./détruits',
+      tr('Banque / compte'),
+      tr('Nb'),
+      tr('Émis'),
+      tr('En attente'),
+      tr('Présentés'),
+      tr('Payés'),
+      tr('Impayés'),
+      tr('Récup./détruits'),
     ];
     final groupes = <String, List<Cheque>>{};
     for (final c in liste) {
@@ -209,7 +215,7 @@ class ServiceRapports {
       periode,
       colonnes,
       lignes,
-      ligne('TOTAL', liste),
+      ligne(tr('TOTAL'), liste),
       {1, 2, 3, 4, 5, 6, 7},
       somme(liste, (_) => true),
     );
@@ -222,12 +228,12 @@ class ServiceRapports {
     DateTime? au,
   }) {
     final colonnes = [
-      'Mois',
-      'Nb',
-      'Émis',
-      'Payés',
-      'Impayés',
-      'En attente / présentés',
+      tr('Mois'),
+      tr('Nb'),
+      tr('Émis'),
+      tr('Payés'),
+      tr('Impayés'),
+      tr('En attente / présentés'),
     ];
     final mois = <DateTime, List<Cheque>>{};
     for (final c in liste) {
@@ -262,7 +268,7 @@ class ServiceRapports {
       periode,
       colonnes,
       lignes,
-      ligne('TOTAL', liste),
+      ligne(tr('TOTAL'), liste),
       {1, 2, 3, 4, 5},
       somme(liste, (_) => true),
     );
@@ -270,12 +276,29 @@ class ServiceRapports {
 
   // ------------------------------------------------------------------ PDF
   Future<Uint8List> pdf(Rapport r) async {
-    final doc = pw.Document(title: r.titre, author: 'Cheque Manager Pro');
+    final doc = pw.Document(title: r.titre, author: tr('Cheque Manager Pro'));
     const bleuNuit = PdfColor.fromInt(0xFF0B1F3A);
     const vert = PdfColor.fromInt(0xFF16A34A);
     final genere = Fmt.dateHeure(DateTime.now());
+    // Police Amiri (latin + arabe) : noms arabes lisibles, rapports en arabe de droite à gauche.
+    final amiri = pw.Font.ttf(
+      await rootBundle.load('assets/fonts/Amiri-Regular.ttf'),
+    );
+    final amiriGras = pw.Font.ttf(
+      await rootBundle.load('assets/fonts/Amiri-Bold.ttf'),
+    );
+    final arabe = I18n.langue == Langue.ar;
+    final theme = arabe
+        ? pw.ThemeData.withFont(base: amiri, bold: amiriGras)
+        : pw.ThemeData.withFont(
+            base: pw.Font.helvetica(),
+            bold: pw.Font.helveticaBold(),
+            fontFallback: [amiri],
+          );
     doc.addPage(
       pw.MultiPage(
+        theme: theme,
+        textDirection: arabe ? pw.TextDirection.rtl : pw.TextDirection.ltr,
         pageFormat: PdfPageFormat.a4.landscape,
         margin: const pw.EdgeInsets.all(24),
         header: (ctx) => pw.Column(
@@ -316,7 +339,7 @@ class ServiceRapports {
                   ],
                 ),
                 pw.Text(
-                  'Édité le $genere',
+                  tr('Édité le {0}', [genere]),
                   style: const pw.TextStyle(
                     fontSize: 9,
                     color: PdfColors.grey700,
@@ -334,7 +357,7 @@ class ServiceRapports {
         footer: (ctx) => pw.Align(
           alignment: pw.Alignment.centerRight,
           child: pw.Text(
-            'Page ${ctx.pageNumber} / ${ctx.pagesCount}',
+            tr('Page {0} / {1}', [ctx.pageNumber, ctx.pagesCount]),
             style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
           ),
         ),
@@ -369,7 +392,7 @@ class ServiceRapports {
           ),
           pw.SizedBox(height: 8),
           pw.Text(
-            'Montants exprimés en dirhams marocains (MAD).',
+            tr('Montants exprimés en dirhams marocains (MAD).'),
             style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
           ),
         ],
@@ -383,12 +406,16 @@ class ServiceRapports {
     final lignes = <List<XCell>>[
       [
         XCell.texte(
-          entreprise.isEmpty ? 'Cheque Manager Pro' : entreprise,
+          entreprise.isEmpty ? tr('Cheque Manager Pro') : entreprise,
           XStyle.gras,
         ),
       ],
       [XCell.texte(r.titre, XStyle.titre)],
-      [XCell.texte('${r.periode} - édité le ${Fmt.dateHeure(DateTime.now())}')],
+      [
+        XCell.texte(
+          tr('{0} - édité le {1}', [r.periode, Fmt.dateHeure(DateTime.now())]),
+        ),
+      ],
       const [],
       [for (final c in r.colonnes) XCell.texte(c, XStyle.entete)],
     ];
@@ -416,7 +443,7 @@ class ServiceRapports {
         cellule(r.totaux[i], i, total: true),
     ]);
     return Xlsx.construire(
-      feuille: 'Rapport',
+      feuille: tr('Rapport'),
       lignes: lignes,
       largeurs: [
         for (var i = 0; i < r.colonnes.length; i++) i == 0 ? 24.0 : 16.0,
@@ -449,9 +476,10 @@ class ServiceRapports {
         .replaceAll(RegExp(r'[éèêë]'), 'e')
         .replaceAll(RegExp(r'[àâ]'), 'a')
         .replaceAll(RegExp(r'[^a-z0-9]+'), '_')
-        .replaceAll(RegExp(r'_+$'), '');
+        .replaceAll(RegExp(r'^_+|_+$'), '');
     final n = DateTime.now();
-    final nom = '${base}_${Fmt.isoDate(n)}.${f.name}';
+    final nom =
+        '${base.isEmpty ? 'rapport' : base}_${Fmt.isoDate(n)}.${f.name}';
     final file = File(p.join(dir.path, nom));
     final List<int> octets = switch (f) {
       FormatExport.pdf => await pdf(r),

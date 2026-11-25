@@ -5,6 +5,7 @@ import '../data/repository.dart';
 import '../models/models.dart';
 import '../state/app_state.dart';
 import '../widgets/communs.dart';
+import '../l10n/i18n.dart';
 
 /// Corbeille : chèques supprimés par erreur, restaurables (§9).
 class CorbeilleScreen extends StatefulWidget {
@@ -36,25 +37,26 @@ class _CorbeilleScreenState extends State<CorbeilleScreen> {
   Future<void> _restaurer(Cheque c) async {
     await context.read<AppState>().ecrire((r) => r.restaurer(c));
     await _charger();
-    if (mounted) notifier(context, 'Chèque restauré');
+    if (mounted) notifier(context, tr('Chèque restauré'));
   }
 
   Future<void> _supprimer(Cheque c) async {
     final app = context.read<AppState>();
     final ok = await confirmer(
       context,
-      titre: 'Suppression définitive',
-      message:
-          'Le chèque n° ${app.numero(c)} sera supprimé définitivement. '
-          'Une trace complète restera dans le journal. Cette action est irréversible.',
-      ok: 'Supprimer définitivement',
+      titre: tr('Suppression définitive'),
+      message: tr(
+        'Le chèque n° {0} sera supprimé définitivement. Une trace complète restera dans le journal. Cette action est irréversible.',
+        [app.numero(c)],
+      ),
+      ok: tr('Supprimer définitivement'),
       danger: true,
     );
     if (!ok) return;
     try {
       await app.ecrire((r) => r.supprimerDefinitivement(c));
       await _charger();
-      if (mounted) notifier(context, 'Chèque supprimé définitivement');
+      if (mounted) notifier(context, tr('Chèque supprimé définitivement'));
     } on RegleException catch (e) {
       if (mounted) notifier(context, e.message, erreur: true);
     }
@@ -63,13 +65,13 @@ class _CorbeilleScreenState extends State<CorbeilleScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Corbeille')),
+      appBar: AppBar(title: Text(tr('Corbeille'))),
       body: !_charge
           ? const Center(child: CircularProgressIndicator())
           : _liste.isEmpty
-          ? const Vide(
+          ? Vide(
               icone: Icons.delete_outline,
-              texte: 'La corbeille est vide.',
+              texte: tr('La corbeille est vide.'),
             )
           : ListView.separated(
               itemCount: _liste.length,
@@ -85,7 +87,7 @@ class _CorbeilleScreenState extends State<CorbeilleScreen> {
                         TextButton.icon(
                           onPressed: () => _restaurer(c),
                           icon: const Icon(Icons.restore),
-                          label: const Text('Restaurer'),
+                          label: Text(tr('Restaurer')),
                         ),
                         TextButton.icon(
                           onPressed: () => _supprimer(c),
@@ -93,9 +95,9 @@ class _CorbeilleScreenState extends State<CorbeilleScreen> {
                             Icons.delete_forever,
                             color: Colors.red,
                           ),
-                          label: const Text(
-                            'Supprimer',
-                            style: TextStyle(color: Colors.red),
+                          label: Text(
+                            tr('Supprimer'),
+                            style: const TextStyle(color: Colors.red),
                           ),
                         ),
                         const SizedBox(width: 8),
